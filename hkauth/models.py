@@ -150,11 +150,11 @@ class CharacterModel(Base):
 
     @property
     def has_public_scopes(self):
-        return True
+        return True  # XXX get from scopesets
 
     @property
     def has_internal_scopes(self):
-        return True
+        return True  # XXX get from scopesets
 
     def __eq__(self, other):
         if not other:
@@ -167,8 +167,8 @@ class CharacterModel(Base):
         return hash((self.user.id, self.character_id))
 
     @property
-    def is_internal(self): # XXX
-        return self.corporation_name == "Hard Knocks Inc."
+    def is_internal(self):
+        return self.corporation_name == "Hard Knocks Inc."  # XXX get from config
 
     def __repr__(self):
         return "<CharacterModel(id={}) {}>".format(self.id, self.character_name)
@@ -255,17 +255,6 @@ class SlackIdentityModel(Base):
     def verify(self):
         if slack.verify_identity(self.email):
             self.verification_sent = True
-
-
-class WH66Notification(Base):
-    user_id = Column(Integer, ForeignKey("user.id"))
-    user = relationship("UserModel", backref="wh66_notifications")
-
-    solar_system_id = Column(Integer, ForeignKey("evesolarsystem.id"))
-    solar_system = relationship("EVESolarSystemModel", backref="wh66_notifications")
-
-    gate_distance = Column(Integer)
-    cyno_distance = Column(Integer)
 
 
 class EVESolarSystemModel(Base):
