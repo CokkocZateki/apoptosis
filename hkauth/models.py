@@ -41,32 +41,16 @@ class UserModel(Base):
     pub_date = Column(DateTime)
     chg_date = Column(DateTime)
 
+    is_admin = Column(Boolean)
+    is_special = Column(Boolean)
+    is_hr = Column(Boolean)
+
     @property
     def is_internal(self):
         # If any character on any active SSO or API token is in the
         # configured alliance or corp then this is an internal user
         # who has access to all features
         return any(c.is_internal for c in self.characters)
-
-    @property
-    def is_admin(self):
-        # Admins pass all authorization checks
-        return False
-
-    @property
-    def is_special(self):
-        # Admins pass all authorization checks
-        return False
-
-    @property
-    def is_hr(self):
-        # If the user is HR then they can see some more about other
-        # users and some special pages.
-
-        if self.is_admin:
-            return True
-
-        return False
 
     @property
     def main_character(self):
