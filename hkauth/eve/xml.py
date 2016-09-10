@@ -6,11 +6,21 @@ from hkauth.exceptions import (
     InvalidAPIKey
 )
 
+from hkauth.helpers import cached
+
+@cached(time=1800)
 def character(character_id):
     http_client = HTTPClient()
 
-    response = http_client.fetch("https://api.eveonline.com/eve/CharacterInfo.xml.aspx?characterID={}".format(character_id))
-    document = etree.fromstring(response.body) # XXX catch malformed
+    try:
+        response = http_client.fetch("https://api.eveonline.com/eve/CharacterInfo.xml.aspx?characterID={}".format(character_id))
+    except HTTPError as e:
+        if e.code in (400, 403):
+            raise InvalidAPIKey()
+        else:
+            raise
+
+    document = etree.fromstring(response.body)
 
     http_client.close()
 
