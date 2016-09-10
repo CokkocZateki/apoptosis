@@ -12,8 +12,6 @@ Make delete button work for identities.
 Work on TeamSpeak 3.
 Work on Forums.
 Make characters/add/success work.
-Make swapping main work.
-Postfix pings with main.
 Solution for success pages to auto-redirect.
 Settings page.
 Group creation admin.
@@ -21,5 +19,4 @@ HR pages.
 Removal of characters.
 Character locations? CREST API sucks.
 Midnight group.
-500 after empty ping all.
-Javascript validation.
+Javascript validation for all 400s.

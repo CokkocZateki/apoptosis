@@ -503,7 +503,9 @@ class PingSendAllPage(AuthPage):
         message = self.get_argument("message", None)
 
         if not message:
-            raise tornado.web.HTTPError(500)
+            raise tornado.web.HTTPError(400)
+
+        message = "{} ({})".format(message, self.current_user.main_character.character_name)
 
         slack.group_ping("midnight-rodeo", message)
 
@@ -531,7 +533,9 @@ class PingSendGroupPage(AuthPage):
         group = self.model_by_id(GroupModel, "group_id")
 
         if not message:
-            raise tornado.web.HTTPError(500)
+            raise tornado.web.HTTPError(400)
+
+        message = "{} ({})".format(message, self.current_user.main_character.character_name)
 
         slack.group_ping(group.slug, message)
 
