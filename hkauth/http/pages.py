@@ -44,6 +44,19 @@ sso_login = "https://login.eveonline.com/oauth/authorize?" + urllib.urlencode({
 })
 
 
+def login_required(func):
+    def inner(self, *args, **kwargs):
+        self.requires_login()
+        func(self)
+    return inner
+
+def internal_required(func):
+    def inner(self, *args, **kwargs):
+        self.requires_internal()
+        func(self)
+    return inner
+
+
 class LoginPage(AuthPage):
     def get(self):
         if self.current_user:  # XXX
@@ -213,19 +226,21 @@ class LoginCallbackPage(AuthPage):
 
 
 class LoginSuccessPage(AuthPage):
-    def get(self):
-        self.requires_login()
 
+    @login_required
+    def get(self):
         return self.render("login_success.html")
 
 
 class LoginCreatedPage(AuthPage):
-    def get(self):
-        self.requires_login()
 
+    @login_required
+    def get(self):
         return self.render("login_created.html")
 
 class LogoutPage(AuthPage):
+
+    @login_required
     def post(self):
         self.set_current_user(None)
 
@@ -242,18 +257,16 @@ class HomePage(AuthPage):
 
 
 class CharactersPage(AuthPage):
+
+    @login_required
     def get(self):
-        self.requires_login()
-
-        login_url = sso_login
-
-        return self.render("characters.html", login_url=login_url)
+        return self.render("characters.html", login_url=sso_login)
 
 
 class CharactersSelectMainPage(AuthPage):
-    def post(self):
-        self.requires_login()
 
+    @login_required
+    def post(self):
         character = self.model_by_id(CharacterModel, "character_id")
 
         for char in self.current_user.characters:
@@ -270,23 +283,23 @@ class CharactersSelectMainPage(AuthPage):
 
 
 class CharactersSelectMainSuccessPage(AuthPage):
-    def get(self):
-        self.requires_login()
 
+    @login_required
+    def get(self):
         return self.render("characters_select_main_success.html")
 
 
 class ServicesPage(AuthPage):
-    def get(self):
-        self.requires_login()
 
+    @login_required
+    def get(self):
         return self.render("services.html")
 
 
 class ServicesAddTS3IdentityPage(AuthPage):
-    def post(self):
-        self.requires_login()
 
+    @login_required
+    def post(self):
         teamspeak_id = self.get_argument("teamspeak_id", None)
 
         if not teamspeak_id: # XXX
@@ -304,18 +317,18 @@ class ServicesAddTS3IdentityPage(AuthPage):
 
 
 class ServicesAddTS3IdentitySuccessPage(AuthPage):
-    def get(self):
-        self.requires_login()
 
+    @login_required
+    def get(self):
         ts3identity = self.model_by_id(TS3IdentityModel, "ts3identity_id")
 
         return self.render("services_add_teamspeak_identity_success.html", ts3identity=ts3identity)
 
 
 class ServicesAddSlackIdentityPage(AuthPage):
-    def post(self):
-        self.requires_login()
 
+    @login_required
+    def post(self):
         slack_id = self.get_argument("slack_id", None)
 
         if not slack_id: # XXX
@@ -333,21 +346,20 @@ class ServicesAddSlackIdentityPage(AuthPage):
 
 
 class ServicesAddSlackIdentitySuccessPage(AuthPage):
-    def get(self):
-        self.requires_login()
 
+    @login_required
+    def get(self):
         slackidentity = self.model_by_id(SlackIdentityModel, "slackidentity_id")
 
         return self.render("services_add_slack_identity_success.html", slackidentity=slackidentity)
 
 
 class ServicesSendVerificationSlackIdentityPage(AuthPage):
-    def post(self):
-        self.requires_login()
 
+    @login_required
+    def post(self):
         slackidentity = self.model_by_id(SlackIdentityModel, "slackidentity_id")
 
-        # Send verification
         slack.send_verification(slackidentity.email)
 
         sec_log.info("slackidentity {} for {} sent verification".format(slackidentity, slackidentity.user))
@@ -356,9 +368,9 @@ class ServicesSendVerificationSlackIdentityPage(AuthPage):
 
 
 class ServicesVerifyVerificationSlackIdentityPage(AuthPage):
-    def post(self):
-        self.requires_login()
 
+    @login_required
+    def post(self):
         code = self.get_argument("code", None)
 
         slackidentity = self.model_by_id(SlackIdentityModel, "slackidentity_id")
@@ -377,29 +389,29 @@ class ServicesVerifyVerificationSlackIdentityPage(AuthPage):
 
 
 class ServicesVerifySlackIdentitySuccessPage(AuthPage):
-    def get(self):
-        self.requires_login()
 
+    @login_required
+    def get(self):
         slackidentity = self.model_by_id(SlackIdentityModel, "slackidentity_id")
 
         return self.render("services_verify_slack_identity_success.html", slackidentity=slackidentity)
 
 
 class GroupsPage(AuthPage):
-    def get(self):
-        self.requires_login()
-        self.requires_internal()
 
+    @login_required
+    @internal_required
+    def get(self):
         groups = session.query(GroupModel).all()
 
         return self.render("groups.html", groups=groups)
 
 
 class GroupsJoinPage(AuthPage):
-    def post(self):
-        self.requires_login()
-        self.requires_internal()
 
+    @login_required
+    @internal_required
+    def post(self):
         group = self.model_by_id(GroupModel, "group_id")
 
         membership = MembershipModel()
@@ -421,20 +433,20 @@ class GroupsJoinPage(AuthPage):
 
 
 class GroupsJoinSuccessPage(AuthPage):
-    def get(self):
-        self.requires_login()
-        self.requires_internal()
 
+    @login_required
+    @internal_required
+    def get(self):
         membership = self.model_by_id(MembershipModel, "membership_id")
 
         return self.render("groups_join_success.html", membership=membership)
 
 
 class GroupsLeavePage(AuthPage):
-    def post(self):
-        self.requires_login()
-        self.requires_internal()
 
+    @login_required
+    @internal_required
+    def post(self):
         group = self.model_by_id(GroupModel, "group_id")
 
         for membership in group.memberships:
@@ -455,29 +467,28 @@ class GroupsLeavePage(AuthPage):
 
 
 class GroupsLeaveSuccessPage(AuthPage):
-    def get(self):
-        self.requires_login()
-        self.requires_internal()
 
+    @login_required
+    @internal_required
+    def get(self):
         group = self.model_by_id(GroupModel, "group_id")
 
         return self.render("groups_leave_success.html", group=group)
 
 
 class PingPage(AuthPage):
+
+    @login_required
+    @internal_required
     def get(self):
-        self.requires_login()
-        self.requires_internal()
+        return self.render("ping.html", groups=self.current_user.groups)  # XXX current_user is available in template
 
-        user_groups = self.current_user.groups
-
-        return self.render("ping.html", groups=user_groups)
 
 class PingSendAllPage(AuthPage):
-    def post(self):
-        self.requires_login()
-        self.requires_internal()
 
+    @login_required
+    @internal_required
+    def post(self):
         message = self.get_argument("message", None)
 
         if not message:
@@ -493,18 +504,18 @@ class PingSendAllPage(AuthPage):
 
 
 class PingSendAllSuccessPage(AuthPage):
-    def get(self):
-        self.requires_login()
-        self.requires_internal()
 
+    @login_required
+    @internal_required
+    def get(self):
         return self.render("ping_all_success.html")
 
 
 class PingSendGroupPage(AuthPage):
-    def post(self):
-        self.requires_login()
-        self.requires_internal()
 
+    @login_required
+    @internal_required
+    def post(self):
         message = self.get_argument("message", None)
         group = self.model_by_id(GroupModel, "group_id")
 
@@ -521,30 +532,31 @@ class PingSendGroupPage(AuthPage):
 
 
 class PingSendGroupSuccessPage(AuthPage):
-    def get(self):
-        self.requires_login()
-        self.requires_internal()
 
+    @login_required
+    @internal_required
+    def get(self):
         group = self.model_by_id(GroupModel, "group_id")
 
         return self.render("ping_group_success.html", group=group)
 
 
 class AdminUsersPage(AuthPage):
-    def get(self):
-        self.requires_login()
-        self.requires_internal()
 
+    @login_required
+    @internal_required
+    def get(self):
         users = session.query(UserModel).all()
 
         return self.render("admin_users.html", users=users)
 
 
 class AdminGroupsPage(AuthPage):
-    def get(self):
-        self.requires_login()
-        self.requires_internal()
+    # XXX requires admin
 
+    @login_required
+    @internal_required
+    def get(self):
         groups = session.query(GroupModel).all()
 
         return self.render("admin_groups.html", groups=groups)
