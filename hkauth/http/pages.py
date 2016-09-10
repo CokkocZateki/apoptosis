@@ -56,13 +56,19 @@ def internal_required(func):
         func(self)
     return inner
 
+def admin_required(func):
+    def inner(self, *args, **kwargs):
+        self.requires_admin()
+        func(self)
+    return inner
+
 
 class LoginPage(AuthPage):
     def get(self):
-        if self.current_user:  # XXX
-            raise tornado.web.HTTPError(403)
-
-        return self.render("login.html", login_url=sso_login)
+        if self.current_user:
+            return self.redirect("/")
+        else:
+            return self.render("login.html", login_url=sso_login)
 
 
 class LoginCallbackPage(AuthPage):
@@ -308,7 +314,7 @@ class ServicesAddTS3IdentityPage(AuthPage):
     def post(self):
         teamspeak_id = self.get_argument("teamspeak_id", None)
 
-        if not teamspeak_id: # XXX
+        if not teamspeak_id:
             raise tornado.web.HTTPError(400)
 
         ts3identity = TS3IdentityModel(teamspeak_id)
@@ -337,7 +343,7 @@ class ServicesAddSlackIdentityPage(AuthPage):
     def post(self):
         slack_id = self.get_argument("slack_id", None)
 
-        if not slack_id: # XXX
+        if not slack_id:
             raise tornado.web.HTTPError(400)
 
         slackidentity = SlackIdentityModel(slack_id)
@@ -466,7 +472,6 @@ class GroupsLeavePage(AuthPage):
 
         sec_log.info("user {} left group {}".format(membership.user, membership.group))
 
-        # XXX Update the entire group
         slack.group_upkeep(group.slug, [member.slack_identities[0].email for member in group.members if len(member.slack_identities)])
 
         return self.redirect("/groups/leave/success?group_id={}".format(group.id))
@@ -487,7 +492,7 @@ class PingPage(AuthPage):
     @login_required
     @internal_required
     def get(self):
-        return self.render("ping.html", groups=self.current_user.groups)  # XXX current_user is available in template
+        return self.render("ping.html")
 
 
 class PingSendAllPage(AuthPage):
@@ -551,6 +556,7 @@ class AdminUsersPage(AuthPage):
 
     @login_required
     @internal_required
+    @admin_required
     def get(self):
         users = session.query(UserModel).all()
 
@@ -558,10 +564,10 @@ class AdminUsersPage(AuthPage):
 
 
 class AdminGroupsPage(AuthPage):
-    # XXX requires admin
 
     @login_required
     @internal_required
+    @admin_required
     def get(self):
         groups = session.query(GroupModel).all()
 
