@@ -1,0 +1,101 @@
+div.ping_section textarea {
+	width: 100%;
+	min-height: 150px;
+}
+
+div.ping_section select {
+	width: 100%;
+}
+
+div.ping_section button {
+	margin-top: .5em;
+}
+
+div.wh66_section select {
+    width: 250px;
+}
+
+.container {
+	background: #fff;
+	padding-top: 5rem;
+}
+
+p#current_user {
+	color: #fff;
+
+	display: inline-block;
+
+	float: right;
+}
+
+p#current_user span.not_verified {
+	color: #f00;
+	font-size: 85%;
+}
+
+label {
+	width: 150px;
+}
+
+input[type="text"], input[type="password"] {
+	width: 250px;
+}
+
+form p {
+	padding-bottom: 15px;
+}
+
+form p:hover span.help {
+	color: #808080;
+}
+
+form p:last-child {
+	border-bottom: none;
+}
+
+input[type="checkbox"] + label {
+	width: auto;
+}
+
+span.help {
+	color: #ccc;
+
+	padding-left: 15px;
+}
+
+input {
+	padding: 3px;
+}
+
+button {
+	margin-right: 15px;
+}
+
+div.characters_section, div.services_section { 
+	margin-bottom: 1.5rem;
+	padding-bottom: 1.5rem;
+}
+
+div.container div.profile_section:last_child {
+	border-bottom: none;
+}
+
+tr.internal {
+	background-color: #dff0d8;
+}
+
+tr.main {
+	font-weight: bold;
+}
+
+p#current_user {
+	margin: 8px 0 0 0;
+}
+
+p#current_user a {
+	color: #fff;
+	text-decoration: underline;
+
+p#current_user a:hover {
+	text-decoration: none;
+}

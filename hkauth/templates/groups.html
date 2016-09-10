@@ -1,0 +1,60 @@
+{% extends "base.html" %}
+
+{% block title %}groups{% end %}
+
+{% block body %}
+<div class="row">
+    <div class="col-sm-12">
+        <h1>{{ _('GROUPS_TITLE') }}</h1>
+        <p>{{ _('GROUPS_INTRO') }}</p>
+    </div>
+</div>
+
+<div class="row groups_section">
+    <div class="col-sm-12 col-md-6">
+        <h2>{{ _('GROUPS_YOU_ARE_IN_TITLE') }}</h2>
+        <p>{{ _('GROUPS_YOU_ARE_IN_INTRO') }}</p>
+        {% for group in groups %}
+            {% if group.has_member(current_user) %}
+                <h2>{{ group.name }}</h2>
+                <form method="POST" action="/groups/leave">
+                    <input type="hidden" name="_xsrf" value="{{ handler.xsrf_token }}">
+                    <input type="hidden" name="group_id" value="{{ group.id }}">
+                    <button type="submit">{{ _('GROUP_LEAVE') }}</button>
+                </form>
+                <p>{{ group.description }}</p>
+            {% end %}
+        {% end %}
+    </div>
+    <div class="col-sm-12 col-md-6">
+        <h2>{{ _('GROUPS_YOU_CAN_JOIN_TITLE') }}</h2>
+        <p>{{ _('GROUPS_YOU_CAN_JOIN_INTRO') }}</p>
+        {% for group in groups %}
+            {% if not group.has_member(current_user) %}
+                <h2>{{ group.name }}</h2>
+                {% if group.has_pending(current_user) %}
+                <form method="POST" action="/groups/leave">
+                    <input type="hidden" name="_xsrf" value="{{ handler.xsrf_token }}">
+                    <input type="hidden" name="group_id" value="{{ group.id }}">
+                    <button type="submit">{{ _('GROUP_LEAVE') }}</button>
+                </form>
+                {% else %}
+                <form method="POST" action="/groups/join">
+                    <input type="hidden" name="_xsrf" value="{{ handler.xsrf_token }}">
+                    <input type="hidden" name="group_id" value="{{ group.id }}">
+                    {% if group.requires_approval %}
+                        <button type="submit">{{ _('GROUP_APPLY_TO_JOIN') }}</button>
+                    {% else %}
+                        <button type="submit">{{ _('GROUP_JOIN') }}</button>
+                    {% end %}
+                </form>
+                {% end %}
+                <p>{{ group.description }}</p>
+                {% if group.has_pending(current_user) %}
+                    <strong>PENDING</strong>
+                {% end %}
+            {% end %}
+        {% end %}
+    </div>
+</div>
+{% end %}

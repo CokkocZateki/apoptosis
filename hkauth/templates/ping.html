@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+
+{% block title %}ping{% end %}
+
+{% block body %}
+<div class="row">
+	<div class="col-sm-12">
+		<h1>{{ _('PING_TITLE') }}</h1>
+		<p>{{ _('PING_INTRO') }}</p>
+	</div>
+</div>
+
+<div class="row ping_section">
+	<div class="col-sm-12 col-md-6">
+		<h2>{{ _('PING_SEND_ALL_TITLE') }}</h2>
+		<p>{{ _('PING_SEND_ALL_INTRO') }}</p>
+
+		<form method="POST" action="/ping/send_all">
+			<input type="hidden" name="_xsrf" value="{{ handler.xsrf_token }}">
+			<textarea class="ping_area" name="message"></textarea>
+			<button type="submit">{{ _('SEND') }}</button>
+		</form>
+	</div>
+	<div class="col-sm-12 col-md-6">
+		<h2>{{ _('PING_SEND_GROUP_TITLE') }}</h2>
+		<p>{{ _('PING_SEND_GROUP_INTRO') }}</p>
+
+        {% if not len(current_user.groups) %}
+            <p>{{ _('PING_SEND_GROUP_NO_GROUPS') }}</p>
+        {% else %}
+            <form method="POST" action="/ping/send_group">
+                <input type="hidden" name="_xsrf" value="{{ handler.xsrf_token }}">
+                <textarea class="ping_area" name="message"></textarea>
+                <select name="group_id">
+                    <option value="0">-- {{ _('PING_PICK_GROUP') }} --</option>
+                    {% for group in current_user.groups %}
+                        <option value="{{ group.id }}">{{ group.name }}</option>
+                    {% end %}
+                </select>
+                <button type="submit">{{ _('SEND') }}</button>
+            </form>
+        {% end %}
+	</div>
+</div>
+{% end %}

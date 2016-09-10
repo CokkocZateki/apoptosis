@@ -1,0 +1,63 @@
+{% extends "base.html" %}
+
+{% block title %}admin_users{% end %}
+
+{% block body %}
+<div class="row characters_section">
+    <div class="col-sm-12">
+        <h1>{{ _('ADMIN_USERS_TITLE') }}</h1>
+        <p>{{ _('ADMIN_USERS_INTRO') }}</h1>
+    </div>
+</div>
+
+<div class="row characters_section">
+    <div class="col-sm-12">
+        <table class="table">
+            <thead class="thead-inverse">
+                <tr>
+                    <th>Main</th>
+                    <th>Alts</th>
+                    <th>Groups</th>
+                    <th>Last Login</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+            {% for user in users %}
+                <tr>
+                    <td>
+                        {{ user.main_character.character_name }}
+                    </td>
+                    <td>
+                        {% if len(user.characters) > 1 %}
+                            {% for character in user.characters %}
+                                {% if character != user.main_character %}
+                                    {{ character.character_name }}
+                                {% end %}
+                            {% end %}
+                        {% else %}
+                            <em>None.</em>
+                        {% end %}
+                    </td>
+                    <td>
+                        {% if len(user.groups) %}
+                            {% for group in user.groups %}
+                                {{ group.name }}
+                            {% end %}
+                        {% else %}
+                            <em>None.</em>
+                        {% end %}
+                    </td>
+                    <td>
+                        {{ user.last_login.pub_date }} (<a href="/admin/users/ip_address?address={{ user.last_login.ip_address }}">{{ user.last_login.ip_address }}</a>)
+                    </td>
+                    <td>
+                        <a href="/admin/users/detail?user_id={{ user.id }}">Details</a>
+                    </td>
+                </tr>
+            {% end %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% end %}

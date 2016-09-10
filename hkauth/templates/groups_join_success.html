@@ -1,0 +1,12 @@
+{% extends "base.html" %}
+
+{% block body %}
+{% if membership.pending %}
+<h1>{{ _('GROUPS_JOIN_SUCCESS_PENDING_TITLE') }}</h1>
+<p>{{ _('GROUPS_JOIN_SUCCESS_PENDING_INTRO') }}</p>
+{% else %}
+<h1>{{ _('GROUPS_JOIN_SUCCESS_DONE_TITLE') }}</h1>
+<p>{{ _('GROUPS_JOIN_SUCCESS_DONE_INTRO') }}</p>
+{% end %}
+
+{% end %}

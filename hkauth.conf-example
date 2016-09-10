@@ -1,0 +1,15 @@
+slack_apitoken = "xoxp-a-token"
+
+ts3_username = "admin"
+ts3_password = "password"
+
+evesso_clientid = "clientid"
+evesso_secretkey = "secretkey"
+evesso_callback = "callback"
+
+tornado_translations = "path"
+tornado_templates = "path"
+tornado_static = "path"
+tornado_secret = "secret"
+
+http_port = 5000

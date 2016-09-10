@@ -1,0 +1,59 @@
+<!doctype html>
+<html>
+    <head>
+        <title>HKAUTH/{% block title %}{% end %}</title>
+        <link rel="stylesheet" href="/static/css/bootstrap.css">
+        <link rel="stylesheet" href="/static/css/style.css">
+    </head>
+    <body>
+        <nav class="navbar navbar-fixed-top navbar-dark bg-inverse">
+            <p id="current_user">
+            {% if current_user %}
+                {{ _('LOGGED_IN_AS') }}
+                <strong>{{ current_user.main_character.character_name }}</strong>
+                /
+                <a href="/settings">{{ _('SETTINGS') }}</a>
+            {% else %}
+                <a href="/login">{{ _('LOGIN') }}</a>
+            {% end %}
+            </p>
+
+            <a class="navbar-brand" href="/">HRDKX Auth</a>
+
+            <ul class="nav navbar-nav">
+
+                {% if current_user %}
+
+                    <li class="nav-item"><a class="nav-link" href="/characters">{{ _('CHARACTERS') }}</a></li>
+                    <li class="nav-item"><a class="nav-link" href="/services">{{ _('SERVICES') }}</a></li>
+
+                    {% if current_user.is_internal %}
+                        <li class="nav-item"><a class="nav-link" href="/groups">{{ _('GROUPS') }}</a></li>
+                        <li class="nav-item"><a class="nav-link" href="/ping">{{ _('PING') }}</a></li>
+                    {% end %}
+
+                    {% if current_user.is_hr %}
+                        <li class="nav-item"><a class="nav-link" href="/groups">{{ _('HR') }}</a></li>
+                    {% end %}
+
+                    {% if current_user.is_admin %}
+                        <li class="nav-item"><a class="nav-link" href="/admin/groups">{{ _('GROUPS_ADMIN') }}</a></li>
+                        <li class="nav-item"><a class="nav-link" href="/admin/users">{{ _('USERS_ADMIN') }}</a></li>
+                    {% end %}
+
+                {% end %}
+
+            </ul>
+
+        </nav>
+
+        <div class="container">
+            {% block body %}{% end %}
+        </div>
+
+        <script src="/static/js/jquery.js"></script>
+        <script src="/static/js/tether.js"></script>
+        <script src="/static/js/bootstrap.js"></script>
+        <script src="/static/js/app.js"></script>
+    </body>
+</html>

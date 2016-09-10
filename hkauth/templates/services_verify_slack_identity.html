@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+
+{% block body %}
+<h1>{{ _('SERVICES_VERIFY_SLACK_IDENTITY_TITLE') }}</h1>
+<p>{{ _('SERVICES_VERIFY_SLACK_IDENTITY_INTRO') }}</p>
+<form method="POST" action="/services/verify_slack_verification">
+	<input type="hidden" name="_xsrf" value="{{ handler.xsrf_token }}">
+	<input type="hidden" name="slackidentity_id" value="{{ slackidentity.id }}">
+
+	<p>
+		<label for="code">{{ _('SERVICES_VERIFY_SLACK_IDENTITY_CODE_LABEL') }}</label>
+		<input id="code" name="code" type="text" placeholder="{{ _('SERVICES_VERIFY_SLACK_IDENTITY_CODE_PLACEHOLDER') }}">
+		<span class="help">{{ _('SERVICES_VERIFY_SLACK_IDENTITY_CODE_HELP') }}</span>
+	</p>
+
+	<p>
+		<button type="submit">Verify</button>
+	</p>
+</form>
+{% end %}

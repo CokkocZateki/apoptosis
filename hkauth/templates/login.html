@@ -1,0 +1,10 @@
+{% extends "base.html" %}
+
+{% block body %}
+<div id="login_container">
+    <h1>{{ _('LOGIN_TITLE') }}</h1>
+    <p>{{ _('LOGIN_INTRO') }}</h1>
+    <p><a href="{{ login_url }}"><img src="/static/sso.png"></a></p>
+    <p>{{ _('LOGIN_OUTRO') }}</p>
+</div>
+{% end %}

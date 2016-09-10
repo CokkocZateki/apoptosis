@@ -1,0 +1,9 @@
+{% extends "base.html" %}
+
+{% block body %}
+<h1>{{ _('PROFILE_SELECT_MAIN_SUCCESS_TITLE') }}</h1>
+<p>{{ _('PROFILE_SELECT_MAIN_SUCCESS_TITLE') }}</p>
+
+<h2>{{ _('PROFILE_SELECT_MAIN_SUCCESS_SELECTED') }}</h2>
+{{ current_user.main_character.character_name }}
+{% end %}
