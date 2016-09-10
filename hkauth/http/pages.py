@@ -73,7 +73,6 @@ class LoginCallbackPage(AuthPage):
         # is already logged in. If they are we are adding a character to
         # their account. If they are not we are either logging them in
         # or creating their account.
-
         code = self.get_argument("code", None)
         state = self.get_argument("state", None)
 
@@ -93,7 +92,7 @@ class LoginCallbackPage(AuthPage):
         state = self.get_argument("state", None)
 
         if not code or not state:
-            return  # XXX
+            return  # XXX veryfy code and state
 
         sso_client = tornado.httpclient.HTTPClient()
         request = tornado.httpclient.HTTPRequest(
@@ -114,7 +113,7 @@ class LoginCallbackPage(AuthPage):
         access_token = response["access_token"]
         refresh_token = response["refresh_token"]
 
-        # Abstract (can be skipped?) XXX
+        # Abstract XXX
         request = tornado.httpclient.HTTPRequest(
             "https://login.eveonline.com/oauth/verify",
             headers={
@@ -128,15 +127,18 @@ class LoginCallbackPage(AuthPage):
         character_id = response["CharacterID"]
         character_scopes = response["Scopes"].split(" ")
 
-        return character_id, character_scopes, access_token, refresh_token
+        account_hash = response["CharacterOwnerHash"]
 
-    def _create(self, character_id, character_scopes, access_token, refresh_token): 
+        return character_id, character_scopes, access_token, refresh_token, account_hash
+
+    def _create(self, character_id, character_scopes, access_token, refresh_token, account_hash): 
         # We don't have an account with this character on it yet. Let's fetch the 
         # character information from the XML API and fill it into a model, tie it
         # up to a fresh new user and log it in
         character = CharacterModel.from_xml_api(character_id)
         character.access_token = access_token
         character.refresh_token = refresh_token
+        character.account_hash = account_hash
 
         # For our scopes we see if they already exist, if they don't we create them and hang them
         # on the character
@@ -145,9 +147,9 @@ class LoginCallbackPage(AuthPage):
         return character
 
     def _add(self):
-        character_id, character_scopes, access_token, refresh_token = self._sso_response()
+        character_id, character_scopes, access_token, refresh_token, account_hash = self._sso_response()
 
-        # See if we already have this character, XXX main and accounthash?
+        # See if we already have this character
         character = session.query(CharacterModel).filter(CharacterModel.character_id==character_id).first()
 
         if character: # XXX add new scopes
@@ -158,7 +160,7 @@ class LoginCallbackPage(AuthPage):
                 sec_log.warn("user {} tried to add {} but belongs to {}".format(self.current_user, character, character.user))
                 raise tornado.web.HTTPError(403)
         else:
-            character = self._create(character_id, character_scopes, access_token, refresh_token)
+            character = self._create(character_id, character_scopes, access_token, refresh_token, account_hash)
 
         # Append the character to the currently logged in character
         self.current_user.characters.append(character)
@@ -172,14 +174,18 @@ class LoginCallbackPage(AuthPage):
         self.redirect("/characters/add/success")
 
     def _login(self):
-        character_id, character_scopes, access_token, refresh_token = self._sso_response()
+        character_id, character_scopes, access_token, refresh_token, account_hash = self._sso_response()
 
-        # See if we already have this character, XXX main and accounthash?
+        # See if we already have this character
         character = session.query(CharacterModel).filter(CharacterModel.character_id==character_id).first()
 
         # The character already exists so we log in to the corresponding user and
-        # redirect to the success page # XXX verify accountHash?
-        if character: # XXX add new scopes
+        # redirect to the success page
+        if character:
+            if character.account_hash != account_hash:
+                sec_log.crit("account hash for %s changed denying login" % character)
+                raise tornado.web.HTTPError(400)
+
             sec_log.info("logged in %s through %s" % (character.user, character))
             self.set_current_user(character.user)
 
@@ -192,37 +198,37 @@ class LoginCallbackPage(AuthPage):
             session.commit()
 
             return self.redirect("/login/success")
+        else:
+            # We don't have an account with this character on it yet. Let's fetch the 
+            # character information from the XML API and fill it into a model, tie it
+            # up to a fresh new user and log it in
+            character = self._create(character_id, character_scopes, access_token, refresh_token, account_hash)
+            character.is_main = True
+            character.pub_date = datetime.now()
 
-        # We don't have an account with this character on it yet. Let's fetch the 
-        # character information from the XML API and fill it into a model, tie it
-        # up to a fresh new user and log it in
-        character = self._create(character_id, character_scopes, access_token, refresh_token)
-        character.is_main = True
-        character.pub_date = datetime.now()
+            user = UserModel()
+            user.characters.append(character)
+            user.pub_date = datetime.now()
+            user.chg_date = datetime.now()
 
-        user = UserModel()
-        user.characters.append(character)
-        user.pub_date = datetime.now()
-        user.chg_date = datetime.now()
+            session.add(user)
+            session.commit()
 
-        session.add(user)
-        session.commit()
+            self.set_current_user(user)
 
-        self.set_current_user(user)
+            sec_log.info("created %s through %s" % (character.user, character))
 
-        sec_log.info("created %s through %s" % (character.user, character))
+            login = UserLoginModel()
+            login.user = character.user
+            login.pub_date = datetime.now()
+            login.ip_address = self.request.remote_ip
 
-        login = UserLoginModel()
-        login.user = character.user
-        login.pub_date = datetime.now()
-        login.ip_address = self.request.remote_ip
+            session.add(login)
+            session.commit()
 
-        session.add(login)
-        session.commit()
-
-        # Redirect to another page with some more information for the user of what
-        # is going on
-        self.redirect("/login/created")
+            # Redirect to another page with some more information for the user of what
+            # is going on
+            return self.redirect("/login/created")
 
 
 class LoginSuccessPage(AuthPage):

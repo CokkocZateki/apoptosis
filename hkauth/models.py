@@ -106,6 +106,8 @@ class CharacterModel(Base):
 
     is_main = Column(Boolean)
 
+    account_hash = Column(String)
+
     refresh_token = Column(String)
     access_token = Column(String)
 
