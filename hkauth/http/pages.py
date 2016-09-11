@@ -1,5 +1,6 @@
 import json
-import urllib
+import urllib.parse
+import base64
 
 from datetime import datetime
 
@@ -33,9 +34,8 @@ from hkauth.cache import redis_cache
 from hkauth import config
 
 
-# XXX fix newline by using base64 module
-sso_auth = "{}:{}".format(config.evesso_clientid, config.evesso_secretkey).encode("base64").replace("\n", "")
-sso_login = "https://login.eveonline.com/oauth/authorize?" + urllib.urlencode({
+sso_auth = base64.b64encode("{}:{}".format(config.evesso_clientid, config.evesso_secretkey).encode("utf-8"))
+sso_login = "https://login.eveonline.com/oauth/authorize?" + urllib.parse.urlencode({
     "response_type": "code",
     "redirect_uri": config.evesso_callback,
     "client_id": config.evesso_clientid,

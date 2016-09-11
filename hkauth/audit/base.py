@@ -1,3 +1,3 @@
 #!/usr/bin/env python
 def message(msg):
-	print msg
+    return msg

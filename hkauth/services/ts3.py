@@ -55,7 +55,6 @@ class TS3Client:
     def ts3_uid_to_cldbid(self, ts3_uid):
         #response = yield self._command("clientgetnamefromuid cluid=1lgnZ0OcGx3O1P4hXseZAdu5cyA=")
         response = yield self._command("servergrouplist")
-        print self._parse_response(response)
 
     @gen.coroutine
     @cached(600)
