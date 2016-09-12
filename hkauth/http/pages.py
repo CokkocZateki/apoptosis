@@ -1,5 +1,10 @@
 import json
-import urllib.parse
+
+try:
+    from urllib.parse import urlencode
+except ImportError:
+    from urllib import urlencode
+
 import base64
 
 from datetime import datetime
@@ -34,8 +39,8 @@ from hkauth.cache import redis_cache
 from hkauth import config
 
 
-sso_auth = base64.b64encode("{}:{}".format(config.evesso_clientid, config.evesso_secretkey).encode("utf-8"))
-sso_login = "https://login.eveonline.com/oauth/authorize?" + urllib.parse.urlencode({
+sso_auth = base64.b64encode("{}:{}".format(config.evesso_clientid, config.evesso_secretkey).encode("utf-8")).decode("ascii")
+sso_login = "https://login.eveonline.com/oauth/authorize?" + urlencode({
     "response_type": "code",
     "redirect_uri": config.evesso_callback,
     "client_id": config.evesso_clientid,
@@ -93,14 +98,14 @@ class LoginCallbackPage(AuthPage):
         else:
             return self._login()
 
-    def _sso_response(self):
+    async def _sso_response(self):
         code = self.get_argument("code", None)
         state = self.get_argument("state", None)
 
         if not code or not state:
             return  # XXX veryfy code and state
 
-        sso_client = tornado.httpclient.HTTPClient()
+        sso_client = tornado.httpclient.AsyncHTTPClient()
         request = tornado.httpclient.HTTPRequest(
             "https://login.eveonline.com/oauth/token",
             method="POST",
@@ -114,12 +119,12 @@ class LoginCallbackPage(AuthPage):
             })
         )
 
-        response = json.loads(sso_client.fetch(request).body)
+        response = await sso_client.fetch(request)
+        response = json.loads(response.body.decode("utf-8"))
 
         access_token = response["access_token"]
         refresh_token = response["refresh_token"]
 
-        # Abstract XXX
         request = tornado.httpclient.HTTPRequest(
             "https://login.eveonline.com/oauth/verify",
             headers={
@@ -128,7 +133,8 @@ class LoginCallbackPage(AuthPage):
             }
         )
 
-        response = json.loads(sso_client.fetch(request).body)
+        response = await sso_client.fetch(request)
+        response = json.loads(response.body.decode("utf-8"))
 
         character_id = response["CharacterID"]
         character_scopes = response["Scopes"].split(" ")
@@ -179,8 +185,8 @@ class LoginCallbackPage(AuthPage):
 
         self.redirect("/characters/add/success")
 
-    def _login(self):
-        character_id, character_scopes, access_token, refresh_token, account_hash = self._sso_response()
+    async def _login(self):
+        character_id, character_scopes, access_token, refresh_token, account_hash = await self._sso_response()
 
         # See if we already have this character
         character = session.query(CharacterModel).filter(CharacterModel.character_id==character_id).first()
@@ -189,7 +195,7 @@ class LoginCallbackPage(AuthPage):
         # redirect to the success page
         if character:
             if character.account_hash != account_hash:
-                sec_log.crit("account hash for %s changed denying login" % character)
+                sec_log.critical("account hash for %s changed denying login" % character)
                 raise tornado.web.HTTPError(400)
 
             sec_log.info("logged in %s through %s" % (character.user, character))

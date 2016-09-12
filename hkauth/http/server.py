@@ -162,7 +162,8 @@ def make_app():
             ),
         ],
         template_path=config.tornado_templates,
-        cookie_secret=config.tornado_secret
+        cookie_secret=config.tornado_secret,
+        debug=True
     )
 
 def main():

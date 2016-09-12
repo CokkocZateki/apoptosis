@@ -1,5 +1,10 @@
 import json
-import urllib
+
+try:
+    from urllib.parse import urlencode
+except ImportError:
+    from urllib import urlencode
+
 import itertools
 
 from tornado.httpclient import HTTPClient, HTTPRequest
@@ -14,7 +19,7 @@ slack_client = HTTPClient()
 
 def slack_request(action, **params):
     params["token"] = config.slack_apitoken
-    params = urllib.urlencode(params)
+    params = urlencode(params)
 
     url = "https://slack.com/api/{0}?{1}".format(action, params)
 

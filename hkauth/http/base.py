@@ -58,14 +58,14 @@ class AuthPage(tornado.web.RequestHandler):
         return self.render("{}.html".format(status_code))
 
     def get_current_user(self):
-        user_id = self.get_secure_cookie("user_id")
+        user_id = int(self.get_secure_cookie("user_id"))
 
         if user_id:
             user = session.query(UserModel).filter(UserModel.id==user_id).first()
 
             if not user:
                 # WTF EVENT!!!!
-                raise tornado.web.HTTPError(403)
+                raise tornado.web.HTTPError(500)
 
             return user
 
