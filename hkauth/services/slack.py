@@ -7,17 +7,17 @@ except ImportError:
 
 import itertools
 
-from tornado.httpclient import HTTPClient, HTTPRequest
+from tornado.httpclient import AsyncHTTPClient, HTTPRequest
 
 from hkauth.log import app_log, sec_log, svc_log
 from hkauth.helpers import cached
 
 from hkauth import config
 
-slack_client = HTTPClient()
 
+async def slack_request(action, **params):
+    slack_client = AsyncHTTPClient()
 
-def slack_request(action, **params):
     params["token"] = config.slack_apitoken
     params = urlencode(params)
 
@@ -26,67 +26,64 @@ def slack_request(action, **params):
     svc_log.info("requesting {}".format(url))
  
     request = HTTPRequest(url)
-    response = slack_client.fetch(request)
+    response = await slack_client.fetch(request)
 
-    return json.loads(response.body)
+    return json.loads(response.body.decode("utf-8"))
 
 
-def group_message(group_slug, message):
+async def group_message(group_slug, message):
     """Send a message to a group."""
-    channel_id = group_slug_to_id(group_slug)
-    return slack_request("chat.postMessage", channel=channel_id, text=message, username="hkauth", parse="full")
+    channel_id = await group_slug_to_id(group_slug)
+    return await slack_request("chat.postMessage", channel=channel_id, text=message, username="hkauth", parse="full")
 
 
-def group_ping(group_name, message):
+async def group_ping(group_name, message):
     """Send a message to a group prefixed to notify everyone."""
     message = "@everyone " + message
-    return group_message(group_name, message)
+    return await group_message(group_name, message)
 
 
-def group_invite(group_slug, user_id):
+async def group_invite(group_slug, user_id):
     """Invite a user to a group."""
     # XXX should use emails
-    channel_id = group_slug_to_id(group_slug)
+    channel_id = await group_slug_to_id(group_slug)
+    return await slack_request("groups.invite", channel=channel_id, user=user_id)
 
-    return slack_request("groups.invite", channel=channel_id, user=user_id)
 
-
-def group_kick(group_slug, user_id):
+async def group_kick(group_slug, user_id):
     """Kick a member from a group."""
     # XXX should use emails
-    channel_id = group_slug_to_id(group_slug)
+    channel_id = await group_slug_to_id(group_slug)
+    return await slack_request("groups.kick", channel=channel_id, user=user_id)
 
-    return slack_request("groups.kick", channel=channel_id, user=user_id)
 
-
-def group_create(group_slug):
+async def group_create(group_slug):
     """Create a group. Initially we check if the group already exists if it does we
        unarchive the group."""
-    channel_id = group_slug_to_id(group_slug)
+    channel_id = await group_slug_to_id(group_slug)
 
     if channel_id:
         svc_log.warn("creation of group {} is causing unarchival".format(group_slug))
-        return group_unarchive(group_slug)
+        return await group_unarchive(group_slug)
     else:
         svc_log.warn("created group {}".format(group_slug))
-        return slack_request("groups.create", name=group_slug)["group"]["id"]
+        response = await slack_request("groups.create", name=group_slug)
+        return response["group"]["id"]
 
-
-def group_remove(group_slug):
+async def group_remove(group_slug):
     """Remove a group by archiving it."""
     # XXX kick all people
-    return group_archive(group_slug)
+    return await group_archive(group_slug)
 
+async def group_members(group_slug):
+    slack_id = await group_slug_to_id(group_slug)
+    response = await slack_request("groups.info", channel=slack_id)
+    return response["group"]["members"]
 
-def group_members(group_slug):
-    slack_id = group_slug_to_id(group_slug)
-    return slack_request("groups.info", channel=slack_id)["group"]["members"]
-
-
-def group_upkeep(group_slug, member_emails):
+async def group_upkeep(group_slug, member_emails):
     """See if any members in the group are not allowed to be in this group,
        this function gets called with all allowed members."""
-    channel_id = group_slug_to_id(group_slug)
+    channel_id = await group_slug_to_id(group_slug)
 
     wanted = set(user_email_to_id(member_email) for member_email in member_emails)
     current = set(member for member in group_members(group_slug) if member != "U1YTLNYDC")  # XXX
@@ -94,48 +91,60 @@ def group_upkeep(group_slug, member_emails):
     to_invite = wanted - current
     to_kick = current - wanted
 
-    map(group_invite, [group_slug] * len(to_invite), to_invite)
-    map(group_kick, [group_slug] * len(to_kick), to_kick)
+    for member in to_invite:
+        await group_invite(group_slug, member)
 
+    for member in to_kick:
+        await group_kick(group_slug, member)
 
-def group_archive(group_slug):
+    return True
+
+async def group_archive(group_slug):
     """Archive a channel making it unavailable to users."""
-    channel_id = group_slug_to_id(group_slug)
+    channel_id = await group_slug_to_id(group_slug)
 
-    slack_request("groups.archive", channel=channel_id)
+    await slack_request("groups.archive", channel=channel_id)
     svc_log.warn("archived channel {}".format(group_slug))
 
-
-def group_unarchive(group_slug):
+async def group_unarchive(group_slug):
     """Restore a channel from the archive so it can be re-used."""
-    channel_id = group_slug_to_id(group_slug)
+    channel_id = await group_slug_to_id(group_slug)
 
-    slack_request("groups.unarchive", channel=channel_id)
+    await slack_request("groups.unarchive", channel=channel_id)
     svc_log.warn("unarchived channel {}".format(group_slug))
 
-@cached(86400)
-def group_slug_to_id(group_slug):
-    groups = slack_request("groups.list")["groups"]
+#@cached(86400)
+async def group_slug_to_id(group_slug):
+    groups = await slack_request("groups.list")
+    groups = groups["groups"]
 
     for group in groups:
         if group["name"] == group_slug:
             return group["id"]
+    else:
+        raise ValueError("No Slack group found")
 
 
-def groups_upkeep(group_slugs):
+async def groups_upkeep(group_slugs):
     """Iterate through the group slugs, archiving channels that do not exist in the list and
        creating/unarchiving does that do."""
 
+    slack_groups = await slack_request("groups.list")
+
     group_slugs = set(["midnight-rodeo"] + group_slugs)
-    slack_slugs = set(group["name"] for group in slack_request("groups.list")["groups"] if not group["is_archived"])
+    slack_slugs= [group["name"] for group in slack_groups if not group["is_archived"]]
 
     to_create = group_slugs - slack_slugs
     to_remove = slack_slugs - group_slugs
 
-    map(group_create, to_create)
+    for group in to_create:
+        await group_create(group)
 
-    map(group_upkeep, to_remove, [[]] * len(to_remove))
-    map(group_remove, to_remove)
+    for group in to_remove:
+        await group_upkeep(group, [])
+        await group_remove(group)
+
+    return True
 
 
 @cached(86400)

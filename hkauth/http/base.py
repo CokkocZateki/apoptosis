@@ -58,16 +58,21 @@ class AuthPage(tornado.web.RequestHandler):
         return self.render("{}.html".format(status_code))
 
     def get_current_user(self):
-        user_id = int(self.get_secure_cookie("user_id"))
+        cookie = self.get_secure_cookie("user_id")
 
-        if user_id:
-            user = session.query(UserModel).filter(UserModel.id==user_id).first()
+        if cookie:
+            user_id = int(self.get_secure_cookie("user_id"))
+        else:
+            return None
 
-            if not user:
-                # WTF EVENT!!!!
-                raise tornado.web.HTTPError(500)
+        user = session.query(UserModel).filter(UserModel.id==user_id).first()
 
-            return user
+        if not user:
+            # This was a cookie for a non-existing user
+            app_log.crit("Cookie with id:{} was used to try to login but no user by that id".format(user_id))
+            raise tornado.web.HTTPError(500)
+
+        return user
 
 
     def set_current_user(self, user):
