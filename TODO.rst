@@ -17,6 +17,5 @@ Settings page.
 Group creation admin.
 HR pages.
 Removal of characters.
-Character locations? CREST API sucks.
 Midnight group.
 Javascript validation for all 400s.
