@@ -1,5 +1,7 @@
 slack_apitoken = "xoxp-a-token"
 
+ts3_server = "localhost"
+ts3_port = 10011
 ts3_username = "admin"
 ts3_password = "password"
 

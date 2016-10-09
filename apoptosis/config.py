@@ -22,7 +22,7 @@ define("evesso_callback", help="EVE SSO callback URI")
 options.define("slack_apitoken", help="Slack API Token")
 
 options.define("ts3_server", help="Teamspeak 3 server")
-options.define("ts3_port", help="Teamspeak 3 port")
+options.define("ts3_port", default=10011, help="Teamspeak 3 port")
 options.define("ts3_username", help="Teamspeak 3 username")
 options.define("ts3_password", help="Teamspeak 3 password")
 
