@@ -84,4 +84,4 @@ class TS3Client:
         return parsed
 
 
-ts3_client = TS3Client().connect("ts.hardknocksinc.net.", 10011)
+ts3_client = TS3Client().connect(ts3_server, ts3_port)
