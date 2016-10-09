@@ -7,6 +7,11 @@ Hard Knocks Inc.
 It ties into the CCP-provided SSO to authenticate characters and allows those
 characters to access various services.
 
+Requirements
+============
+
+* Python 3.5
+
 Getting Started
 ===============
 First you run `python setup.py install` or alternatively when working in a
