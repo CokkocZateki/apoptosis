@@ -13,7 +13,8 @@ setup(
         'tornado',
         'sqlalchemy',
         'redis',
-        'requests'
+        'requests',
+        'lxml'
     ],
     entry_points={
         'console_scripts': [
