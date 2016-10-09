@@ -9,10 +9,10 @@ import itertools
 
 from tornado.httpclient import AsyncHTTPClient, HTTPRequest
 
-from hkauth.log import app_log, sec_log, svc_log
-from hkauth.helpers import cached
+from apoptosis.log import app_log, sec_log, svc_log
+from apoptosis.helpers import cached
 
-from hkauth import config
+from apoptosis import config
 
 
 async def slack_request(action, **params):
@@ -34,7 +34,7 @@ async def slack_request(action, **params):
 async def group_message(group_slug, message):
     """Send a message to a group."""
     channel_id = await group_slug_to_id(group_slug)
-    return await slack_request("chat.postMessage", channel=channel_id, text=message, username="hkauth", parse="full")
+    return await slack_request("chat.postMessage", channel=channel_id, text=message, username="apoptosis", parse="full")
 
 
 async def group_ping(group_name, message):
@@ -170,5 +170,5 @@ def private_message(user_email, message):
     user_id = user_email_to_id(user_email)
     channel_id = slack_request("im.open", user=user_id)["channel"]["id"]
 
-    return slack_request("chat.postMessage", channel=channel_id, text=message, username="hkauth", parse="full")
+    return slack_request("chat.postMessage", channel=channel_id, text=message, username="apoptosis", parse="full")
 

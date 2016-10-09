@@ -2,11 +2,11 @@ from tornado.httpclient import HTTPClient, HTTPError
 
 from lxml import etree
 
-from hkauth.exceptions import (
+from apoptosis.exceptions import (
     InvalidAPIKey
 )
 
-from hkauth.helpers import cached
+from apoptosis.helpers import cached
 
 @cached(time=1800)
 def character(character_id):

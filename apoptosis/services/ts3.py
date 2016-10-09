@@ -5,10 +5,10 @@ from typing import List, Dict
 from tornado.ioloop import IOLoop
 from tornado.iostream import IOStream
 
-from hkauth.log import svc_log
-from hkauth.helpers import cached
+from apoptosis.log import svc_log
+from apoptosis.helpers import cached
 
-from hkauth import config
+from apoptosis import config
 
 
 class TS3Client:

@@ -12,6 +12,6 @@ root.setLevel(logging.DEBUG)
 
 root.addHandler(channel)
 
-app_log = logging.getLogger("hkauth.application")
-sec_log = logging.getLogger("hkauth.security")
-svc_log = logging.getLogger("hkauth.services")
+app_log = logging.getLogger("apoptosis.application")
+sec_log = logging.getLogger("apoptosis.security")
+svc_log = logging.getLogger("apoptosis.services")

@@ -2,13 +2,13 @@
 from setuptools import setup
 
 setup(
-    name="hkauth",
+    name="apoptosis",
     version="0.1",
-    description="Tornado web application for HKauth",
+    description="Tornado web application for Apoptosis",
     author="Franky Saken",
     author_email="frankysaken@gmail.com",
-    url="https://github.com/hrdkx/hkauth",
-    packages=["hkauth"],
+    url="https://github.com/hrdkx/apoptosis",
+    packages=["apoptosis"],
     install_requires=[
         'tornado',
         'sqlalchemy',
@@ -17,7 +17,7 @@ setup(
     ],
     entry_points={
         'console_scripts': [
-            'hkauth = hkauth.commands.hkauth:main'
+            'apoptosis = apoptosis.commands.apoptosis:main'
         ]
     }
 )

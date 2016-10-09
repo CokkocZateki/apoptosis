@@ -12,19 +12,19 @@ from datetime import datetime
 import tornado.web
 import tornado.httpclient
 
-from hkauth.log import app_log, sec_log
+from apoptosis.log import app_log, sec_log
 
-from hkauth.services import slack
-from hkauth.services import ts3
+from apoptosis.services import slack
+from apoptosis.services import ts3
 
-from hkauth.http.base import (
+from apoptosis.http.base import (
     AuthPage
 )
 
-from hkauth.eve.crest import default_scopes
+from apoptosis.eve.crest import default_scopes
 
-from hkauth.models import session
-from hkauth.models import (
+from apoptosis.models import session
+from apoptosis.models import (
     UserModel,
     UserLoginModel,
     CharacterModel,
@@ -34,9 +34,9 @@ from hkauth.models import (
     MembershipModel
 )
 
-from hkauth.cache import redis_cache
+from apoptosis.cache import redis_cache
 
-from hkauth import config
+from apoptosis import config
 
 
 sso_auth = base64.b64encode("{}:{}".format(config.evesso_clientid, config.evesso_secretkey).encode("utf-8")).decode("ascii")

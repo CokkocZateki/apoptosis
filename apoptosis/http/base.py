@@ -1,12 +1,12 @@
 import tornado.ioloop
 import tornado.web
 
-from hkauth.models import (
+from apoptosis.models import (
     session,
     UserModel
 )
 
-from hkauth.audit import AuditProxy
+from apoptosis.audit import AuditProxy
 
 
 class AuthPage(tornado.web.RequestHandler):

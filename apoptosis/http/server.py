@@ -2,7 +2,7 @@ import tornado.web
 import tornado.locale
 import tornado.ioloop
 
-from hkauth.http.pages import (
+from apoptosis.http.pages import (
     HomePage,
     LoginPage,
     LoginCallbackPage,
@@ -34,7 +34,7 @@ from hkauth.http.pages import (
     AdminUsersPage
 )
 
-from hkauth import config
+from apoptosis import config
 
 
 def make_app():

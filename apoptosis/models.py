@@ -11,12 +11,12 @@ from sqlalchemy.orm import backref, sessionmaker, scoped_session
 
 from sqlalchemy.ext.declarative import declarative_base, declared_attr
 
-from hkauth.exceptions import InvalidAPIKey
+from apoptosis.exceptions import InvalidAPIKey
 
-from hkauth.services import slack
-from hkauth.eve import xml as xml_api
-from hkauth.eve import crest as crest_api
-from hkauth import config
+from apoptosis.services import slack
+from apoptosis.eve import xml as xml_api
+from apoptosis.eve import crest as crest_api
+from apoptosis import config
 
 
 engine = create_engine(config.database_uri)

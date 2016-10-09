@@ -6,7 +6,7 @@ define("redis_port", default=6379, help="Redis server port")
 define("redis_database", default=0, help="Redis server database")
 define("redis_password", default="", help="Redis server password")
 
-define("database_uri", default="sqlite:////tmp/hkauth.db", help="Database URI")
+define("database_uri", default="sqlite:////tmp/apoptosis.db", help="Database URI")
 
 define("http_port", default=5000, help="HTTP Port")
 
@@ -24,7 +24,7 @@ options.define("slack_apitoken", help="Slack API Token")
 options.define("ts3_username", help="Teamspeak 3 username")
 options.define("ts3_password", help="Teamspeak 3 password")
 
-parse_config_file("/etc/hkauth.conf")
+parse_config_file("/etc/apoptosis.conf")
 
 redis_host = options.redis_host
 redis_port = options.redis_port

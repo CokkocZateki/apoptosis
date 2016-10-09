@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 import argparse
 
-from hkauth.http.server import main as http_main
+from apoptosis.http.server import main as http_main
 
 
 parser = argparse.ArgumentParser(description='HKauth CLI frontend.')

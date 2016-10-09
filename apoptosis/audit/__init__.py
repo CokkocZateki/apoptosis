@@ -1,4 +1,4 @@
-from hkauth.audit import (
+from apoptosis.audit import (
 	user,
 	security
 )

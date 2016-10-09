@@ -1,6 +1,6 @@
 import redis
 
-from hkauth import config
+from apoptosis import config
 
 
 redis_cache = redis.StrictRedis(

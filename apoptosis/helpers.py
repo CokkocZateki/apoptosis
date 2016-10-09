@@ -1,8 +1,8 @@
 import json
 import hashlib
 
-from hkauth.log import app_log
-from hkauth.cache import redis_cache
+from apoptosis.log import app_log
+from apoptosis.cache import redis_cache
 
 
 def cached(time=60):

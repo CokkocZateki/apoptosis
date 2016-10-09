@@ -1,4 +1,4 @@
-from hkauth.audit.base import message
+from apoptosis.audit.base import message
 
 
 def succesful_registration(request, user):
