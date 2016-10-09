@@ -6,12 +6,8 @@ from apoptosis.models import (
     UserModel
 )
 
-from apoptosis.audit import AuditProxy
-
 
 class AuthPage(tornado.web.RequestHandler):
-    audit = AuditProxy()
-
     def requires_login(self):
         if not self.current_user:
             raise tornado.web.HTTPError(401)
