@@ -9,5 +9,7 @@ characters to access various services.
 
 Getting Started
 ===============
-`python setup.py install`
-`apoptosis --run-server`
+First you run `python setup.py install` or alternatively when working in a
+virtual environment during development `python setup.py develop`. After that
+you can start a server with: `apoptosis --run-server`.
+
