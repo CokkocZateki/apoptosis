@@ -6,3 +6,8 @@ Hard Knocks Inc.
 
 It ties into the CCP-provided SSO to authenticate characters and allows those
 characters to access various services.
+
+Getting Started
+===============
+`python setup.py install`
+`apoptosis --run-server`
