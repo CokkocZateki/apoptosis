@@ -37,9 +37,11 @@ from apoptosis.http.pages import (
 )
 
 from apoptosis import config
+from apoptosis import queue 
 
 
 def make_app():
+
     return tornado.web.Application([
             (
                 r"/",
@@ -179,6 +181,9 @@ def make_app():
 def main():
     app = make_app()
     app.listen(config.http_port)
+
+    queue.setup()
+
     tornado.locale.load_translations(config.tornado_translations)
     tornado.ioloop.IOLoop.current().start()
 
