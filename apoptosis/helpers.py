@@ -23,7 +23,7 @@ def cached(time=60):
                 app_log.debug("serving {} from cache".format(cache_key))
                 return json.loads(redis_cache.get(cache_key))
 
-            data = await func(*args, **kwargs)
+            data = func(*args, **kwargs)
 
             redis_cache.setex(cache_key, time, json.dumps(data))
             app_log.debug("put {} in cache".format(cache_key))

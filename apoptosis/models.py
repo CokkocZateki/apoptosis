@@ -130,13 +130,13 @@ class CharacterModel(Base):
 
 
     @classmethod
-    def from_xml_api(cls, character_id):
+    async def from_xml_api(cls, character_id):
         """Instantiate a new character model from the public EVE XML
            API through its character id."""
 
         instance = cls()
 
-        response = xml_api.character(character_id)
+        response = await xml_api.character(character_id)
 
         instance.character_id = response["character_id"]
         instance.character_name = response["character_name"]
@@ -261,6 +261,35 @@ class SlackIdentityModel(Base):
 class EVESolarSystemModel(Base):
     eve_id = Column(Integer)
     eve_name = Column(String)
+
+
+class EVECharacterModel(Base):
+    eve_id = Column(Integer)
+    eve_name = Column(String)
+
+
+class EVECorporationModel(Base):
+    eve_id = Column(Integer)
+    eve_name = Column(String)
+
+
+class EVEAllianceModel(Base):
+    eve_id = Column(Integer)
+    eve_name = Column(String)
+
+
+class LocalScanModel(Base):
+    raw = Column(Text)
+
+
+class LocalScanMembershipModel(Base):
+    character_id = Column(Integer, ForeignKey("evecharacter.id"))
+    character = relationship("EVECharacterModel", backref="characters")
+
+    system_id = Column(Integer, ForeignKey("evesolarsystem.id"))
+    system = relationship("EVESolarSystemModel", backref="systems")
+
+    when = Column(DateTime)
 
 
 if __name__ == '__main__':

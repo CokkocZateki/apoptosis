@@ -17,6 +17,8 @@ from apoptosis.log import app_log, sec_log
 from apoptosis.services import slack
 from apoptosis.services import ts3
 
+from apoptosis.tools import localscan
+
 from apoptosis.http.base import (
     AuthPage
 )
@@ -94,9 +96,9 @@ class LoginCallbackPage(AuthPage):
         # XXX check state!?
 
         if self.current_user:
-            return self._add()
+            return await self._add()
         else:
-            return self._login()
+            return await self._login()
 
     async def _sso_response(self):
         code = self.get_argument("code", None)
@@ -143,11 +145,11 @@ class LoginCallbackPage(AuthPage):
 
         return character_id, character_scopes, access_token, refresh_token, account_hash
 
-    def _create(self, character_id, character_scopes, access_token, refresh_token, account_hash): 
+    async def _create(self, character_id, character_scopes, access_token, refresh_token, account_hash): 
         # We don't have an account with this character on it yet. Let's fetch the 
         # character information from the XML API and fill it into a model, tie it
         # up to a fresh new user and log it in
-        character = CharacterModel.from_xml_api(character_id)
+        character = await CharacterModel.from_xml_api(character_id)
         character.access_token = access_token
         character.refresh_token = refresh_token
         character.account_hash = account_hash
@@ -158,8 +160,8 @@ class LoginCallbackPage(AuthPage):
 
         return character
 
-    def _add(self):
-        character_id, character_scopes, access_token, refresh_token, account_hash = self._sso_response()
+    async def _add(self):
+        character_id, character_scopes, access_token, refresh_token, account_hash = await self._sso_response()
 
         # See if we already have this character
         character = session.query(CharacterModel).filter(CharacterModel.character_id==character_id).first()
@@ -172,7 +174,7 @@ class LoginCallbackPage(AuthPage):
                 sec_log.warn("user {} tried to add {} but belongs to {}".format(self.current_user, character, character.user))
                 raise tornado.web.HTTPError(403)
         else:
-            character = self._create(character_id, character_scopes, access_token, refresh_token, account_hash)
+            character = await self._create(character_id, character_scopes, access_token, refresh_token, account_hash)
 
         # Append the character to the currently logged in character
         self.current_user.characters.append(character)
@@ -214,7 +216,7 @@ class LoginCallbackPage(AuthPage):
             # We don't have an account with this character on it yet. Let's fetch the 
             # character information from the XML API and fill it into a model, tie it
             # up to a fresh new user and log it in
-            character = self._create(character_id, character_scopes, access_token, refresh_token, account_hash)
+            character = await self._create(character_id, character_scopes, access_token, refresh_token, account_hash)
             character.is_main = True
             character.pub_date = datetime.now()
 
@@ -492,6 +494,53 @@ class GroupsLeaveSuccessPage(AuthPage):
 
         return self.render("groups_leave_success.html", group=group)
 
+
+class ToolsPage(AuthPage):
+
+    @login_required
+    @internal_required
+    async def get(self):
+        return self.render("tools.html")
+
+
+class LocalScanPage(AuthPage):
+
+    @login_required
+    @internal_required
+    async def get(self):
+        return self.render("localscan.html")
+
+
+class LocalScanCreatePage(AuthPage):
+
+    @login_required
+    @internal_required
+    async def get(self):
+        return self.render("localscan.html")
+
+
+class LocalScanCreateCreatePage(AuthPage):
+
+    @login_required
+    @internal_required
+    async def get(self):
+        return self.render("localscan.html")
+
+
+class LocalScanCreateSuccessPage(AuthPage):
+
+    @login_required
+    @internal_required
+    async def get(self):
+        return self.render("localscan.html")
+
+
+class LocalScanViewPage(AuthPage):
+
+    @login_required
+    @internal_required
+    async def get(self):
+        return self.render("localscan.html")
 
 class PingPage(AuthPage):
 

@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+
+{% block title %}localscan{% end %}
+
+{% block body %}
+<div class="row">
+	<div class="col-sm-12">
+		<h1>{{ _('TOOLS_TITLE') }}</h1>
+		<p>{{ _('TOOLS_INTRO') }}</p>
+
+        <a href="/tools/localscan">{{ _('TOOLS_LOCALSCAN') }}</a>
+	</div>
+</div>
+<div class="row">
+	<div class="col-sm-12">
+		<h1>{{ _('LOCALSCAN_TITLE') }}</h1>
+		<p>{{ _('LOCALSCAN_INTRO') }}</p>
+
+		<form method="POST" action="/localscan/create">
+			<input type="hidden" name="_xsrf" value="{{ handler.xsrf_token }}">
+			<textarea class="localscan_area" name="localscan"></textarea>
+			<button type="submit">{{ _('SEND') }}</button>
+		</form>
+	</div>
+</div>
+{% end %}

@@ -31,7 +31,9 @@ from apoptosis.http.pages import (
     PingSendAllSuccessPage,
     PingSendGroupPage,
     PingSendGroupSuccessPage,
-    AdminUsersPage
+    AdminUsersPage,
+    ToolsPage,
+    LocalScanPage
 )
 
 from apoptosis import config
@@ -106,6 +108,14 @@ def make_app():
             (
                 r"/groups/leave/success",
                 GroupsLeaveSuccessPage
+            ),
+            (
+                r"/tools",
+                ToolsPage
+            ),
+            (
+                r"/tools/localscan",
+                LocalScanPage
             ),
             (
                 r"/ping",
