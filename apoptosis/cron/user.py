@@ -1,9 +1,11 @@
 from anoikis.api.crest import characters as crest_characters
 
 from apoptosis.models import session
-from apoptosis.models import UserModel, CharacterLocationHistory, EVESolarSystemModel
+from apoptosis.models import UserModel, CharacterLocationHistory, CharacterSessionHistory, EVESolarSystemModel
 
 from apoptosis import queue
+
+from datetime import datetime
 
 
 def setup():
@@ -15,26 +17,48 @@ def setup_user(user):
         setup_character(character)
 
 def setup_character(character):
-    queue.add_recurring(15, refresh_character_location, character)
+    queue.add_recurring(15, refresh_character_online, character)
     queue.add_recurring(300, refresh_character, character)
 
-def refresh_character_location(character):
+def refresh_character_online(character):
+    """Refresh a characters online state and it's current location.
+    
+       XXX: maybe make a slower window the longer someone is offline?"""
     system = crest_characters.character_location(character.character_id, character.access_token)
 
     if not system:
-        return
+        # char is currently offline lets see if we have an entry in the session
+        # history that shows him as online and update that
+        if len(character.session_history) and character.session_history[-1].sign_out is None:
+            # update that record
+            character.session_history[-1].sign_out = datetime.now()
+            
+            session.add(character)
+            session.commit()
+    else:
+        # char is currently online. do we curently have an entry that shows
+        # as online?
+        if len(character.session_history) and character.session_history[-1].sign_out is None:
+            # yep, continue
+            pass
+        else:
+            # add a new session entry
+            session_entry = CharacterSessionHistory(character)
+            session_entry.sign_in = datetime.now()
+            
+            session.add(session_entry)
 
-    system = EVESolarSystemModel.from_id(system)
+        system = EVESolarSystemModel.from_id(system)
 
-    if len(character.location_history) and system is character.location_history[-1]:
-        return
+        if len(character.location_history) and system is character.location_history[-1]:
+            # don't update location history if the user is still in the same system
+            pass
+        else:
+            history_entry = CharacterLocationHistory(character, system)
 
-    history_entry = CharacterLocationHistory(character, system)
-
-    session.add(history_entry)
-    session.commit()
-
-    print(character.location_history[-2].when, character.location_history[-1].when)
+            session.add(history_entry)
+            
+        session.commit()
 
 def refresh_character(character):
     print("refreshing character", character)

@@ -190,6 +190,16 @@ class CharacterLocationHistory(Base):
         self.system = system
         self.when = datetime.now()
 
+class CharacterSessionHistory(Base):
+    character_id = Column(Integer, ForeignKey("character.id"))
+    character = relationship("CharacterModel", backref="session_history")
+
+    sign_in = Column(DateTime)
+    sign_out = Column(DateTime)
+
+    def __init__(self, character):
+        self.character = character
+
 
 class GroupModel(Base):
     name = Column(String)
@@ -280,7 +290,7 @@ class EVESolarSystemModel(Base):
 
     @classmethod
     def from_id(cls, _id):
-        instance = session.query(cls).filter(cls.id==_id).first()
+        instance = session.query(cls).filter(cls.eve_id==_id).first()
 
         if not instance:
             instance = cls()
