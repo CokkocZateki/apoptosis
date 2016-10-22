@@ -2,9 +2,7 @@ import tornado.ioloop
 import tornado.gen
 
 import itertools
-
 import uuid
-
 
 _tasks = []
 
@@ -32,7 +30,3 @@ def add_recurring(interval, f, *args, **kwargs):
 
 def stop_recurring(key):
     _tasks.remove(key)
-
-def setup():
-    add_once(lambda x: print(x), 1)
-    add_recurring(60, lambda x: print(x), 1)

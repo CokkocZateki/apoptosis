@@ -1,4 +1,4 @@
-from tornado.httpclient import HTTPClient, HTTPError
+from tornado.httpclient import AsyncHTTPClient, HTTPError
 
 from lxml import etree
 
@@ -8,12 +8,11 @@ from apoptosis.exceptions import (
 
 from apoptosis.helpers import cached
 
-@cached(time=1800)
-def character(character_id):
-    http_client = HTTPClient()
+async def character(character_id):
+    http_client = AsyncHTTPClient()
 
     try:
-        response = http_client.fetch("https://api.eveonline.com/eve/CharacterInfo.xml.aspx?characterID={}".format(character_id))
+        response = await http_client.fetch("https://api.eveonline.com/eve/CharacterInfo.xml.aspx?characterID={}".format(character_id))
     except HTTPError as e:
         if e.code in (400, 403):
             raise InvalidAPIKey()

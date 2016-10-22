@@ -13,17 +13,17 @@ import tornado.web
 import tornado.httpclient
 
 from apoptosis.log import app_log, sec_log
-
 from apoptosis.services import slack
 from apoptosis.services import ts3
-
 from apoptosis.tools import localscan
+from apoptosis.cache import redis_cache
+from apoptosis import config
+from apoptosis.eve.crest import default_scopes
 
 from apoptosis.http.base import (
     AuthPage
 )
 
-from apoptosis.eve.crest import default_scopes
 
 from apoptosis.models import session
 from apoptosis.models import (
@@ -36,9 +36,8 @@ from apoptosis.models import (
     MembershipModel
 )
 
-from apoptosis.cache import redis_cache
+import apoptosis.cron.user as cron_user
 
-from apoptosis import config
 
 
 sso_auth = base64.b64encode("{}:{}".format(config.evesso_clientid, config.evesso_secretkey).encode("utf-8")).decode("ascii")
@@ -185,6 +184,8 @@ class LoginCallbackPage(AuthPage):
 
         sec_log.info("added %s for %s" % (character, character.user))
 
+        cron_user.setup_character(character)
+
         self.redirect("/characters/add/success")
 
     async def _login(self):
@@ -239,6 +240,8 @@ class LoginCallbackPage(AuthPage):
 
             session.add(login)
             session.commit()
+
+            cron_user.setup_character(character)
 
             # Redirect to another page with some more information for the user of what
             # is going on

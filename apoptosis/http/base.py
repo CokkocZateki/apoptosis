@@ -6,6 +6,8 @@ from apoptosis.models import (
     UserModel
 )
 
+from apoptosis.log import app_log
+
 
 class AuthPage(tornado.web.RequestHandler):
     def requires_login(self):
@@ -65,7 +67,7 @@ class AuthPage(tornado.web.RequestHandler):
 
         if not user:
             # This was a cookie for a non-existing user
-            app_log.crit("Cookie with id:{} was used to try to login but no user by that id".format(user_id))
+            app_log.warn("Cookie with id:{} was used to try to login but no user by that id".format(user_id))
             raise tornado.web.HTTPError(500)
 
         return user

@@ -1,4 +1,3 @@
-import datetime
 import os
 
 import hashlib
@@ -10,6 +9,8 @@ from sqlalchemy.orm import relationship, backref, joinedload
 from sqlalchemy.orm import backref, sessionmaker, scoped_session
 
 from sqlalchemy.ext.declarative import declarative_base, declared_attr
+
+from datetime import datetime
 
 from apoptosis.exceptions import InvalidAPIKey
 
@@ -175,6 +176,21 @@ class CharacterModel(Base):
         return "<CharacterModel(id={}) {}>".format(self.id, self.character_name)
 
 
+class CharacterLocationHistory(Base):
+    character_id = Column(Integer, ForeignKey("character.id"))
+    character = relationship("CharacterModel", backref="location_history")
+
+    system_id = Column(Integer, ForeignKey("evesolarsystem.id"))
+    system = relationship("EVESolarSystemModel")
+
+    when = Column(DateTime)
+
+    def __init__(self, character, system):
+        self.character = character
+        self.system = system
+        self.when = datetime.now()
+
+
 class GroupModel(Base):
     name = Column(String)
     slug = Column(String)
@@ -261,6 +277,16 @@ class SlackIdentityModel(Base):
 class EVESolarSystemModel(Base):
     eve_id = Column(Integer)
     eve_name = Column(String)
+
+    @classmethod
+    def from_id(cls, _id):
+        instance = session.query(cls).filter(cls.id==_id).first()
+
+        if not instance:
+            instance = cls()
+            instance.eve_id = _id
+
+        return instance
 
 
 class EVECharacterModel(Base):
