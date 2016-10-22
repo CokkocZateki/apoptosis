@@ -4,6 +4,7 @@ from apoptosis.models import session
 from apoptosis.models import UserModel, CharacterLocationHistory, CharacterSessionHistory, EVESolarSystemModel
 
 from apoptosis import queue
+from apoptosis.log import eve_log
 
 from datetime import datetime
 
@@ -35,6 +36,8 @@ def refresh_character_online(character):
             
             session.add(character)
             session.commit()
+
+            eve_log.debug("{} signed out".format(character.character_name))
     else:
         # char is currently online. do we curently have an entry that shows
         # as online?
@@ -48,6 +51,8 @@ def refresh_character_online(character):
             
             session.add(session_entry)
 
+            eve_log.debug("{} signed in".format(character.character_name))
+
         system = EVESolarSystemModel.from_id(system)
 
         if len(character.location_history) and system is character.location_history[-1]:
@@ -56,9 +61,11 @@ def refresh_character_online(character):
         else:
             history_entry = CharacterLocationHistory(character, system)
 
+            eve_log.debug("{} moved to {}".format(character.character_name, system.eve_name))
+
             session.add(history_entry)
             
         session.commit()
 
 def refresh_character(character):
-    print("refreshing character", character)
+    pass
