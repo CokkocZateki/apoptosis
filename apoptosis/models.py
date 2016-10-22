@@ -289,12 +289,12 @@ class EVESolarSystemModel(Base):
     eve_name = Column(String)
 
     @classmethod
-    def from_id(cls, _id):
-        instance = session.query(cls).filter(cls.eve_id==_id).first()
+    def from_id(cls, eve_id):
+        instance = session.query(cls).filter(cls.eve_id==eve_id).first()
 
         if not instance:
             instance = cls()
-            instance.eve_id = _id
+            instance.eve_id = eve_id
 
         return instance
 

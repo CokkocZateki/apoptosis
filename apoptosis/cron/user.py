@@ -55,7 +55,7 @@ def refresh_character_online(character):
 
         system = EVESolarSystemModel.from_id(system)
 
-        if len(character.location_history) and system is character.location_history[-1]:
+        if len(character.location_history) and system.id is character.location_history[-1].id:
             # don't update location history if the user is still in the same system
             pass
         else:
