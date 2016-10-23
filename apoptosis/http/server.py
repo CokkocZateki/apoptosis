@@ -31,7 +31,9 @@ from apoptosis.http.pages import (
     PingSendAllSuccessPage,
     PingSendGroupPage,
     PingSendGroupSuccessPage,
+    AdminPage,
     AdminUsersPage,
+    AdminCharactersPage,
     ToolsPage,
     LocalScanPage
 )
@@ -140,8 +142,17 @@ def make_app():
                 PingSendGroupSuccessPage
             ),
             (
+                r"/admin",
+                AdminPage 
+            ),
+
+            (
                 r"/admin/users",
                 AdminUsersPage 
+            ),
+            (
+                r"/admin/characters",
+                AdminCharactersPage 
             ),
             (
                 r"/login",

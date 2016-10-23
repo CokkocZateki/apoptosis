@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+
+{% block title %}tools{% end %}
+
+{% block body %}
+<div class="row">
+	<div class="col-sm-12">
+		<h1>{{ _('ADMIN_TITLE') }}</h1>
+		<p>{{ _('ADMIN_INTRO') }}</p>
+	</div>
+</div>
+<div class="row">
+	<div class="col-sm-3">
+		<h2>{{ _('ADMIN_PENDING') }}</h2>
+	</div>
+	<div class="col-sm-3">
+		<h2>{{ _('ADMIN_GLANCE') }}</h2>
+        <p>There are <strong>{{ glance_online }}</strong> characters online out of a total of <strong>{{ glance_total }}</strong> characters registered (<strong>{{ glance_internal}}</strong> internal). Of those <strong>0</strong> are no longer valid.
+	</div>
+	<div class="col-sm-3">
+		<h2>{{ _('ADMIN_IDLE') }}</h2>
+	</div>
+	<div class="col-sm-3">
+		<h2>{{ _('ADMIN_LOGINS') }}</h2>
+	</div>
+</div>
+{% end %}

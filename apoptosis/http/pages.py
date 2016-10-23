@@ -614,6 +614,26 @@ class PingSendGroupSuccessPage(AuthPage):
         return self.render("ping_group_success.html", group=group)
 
 
+class AdminPage(AuthPage):
+
+    @login_required
+    @internal_required
+    @admin_required
+    async def get(self):
+        characters = [character for character in session.query(CharacterModel).all()]
+
+        glance_total = len(characters)
+        glance_online = len([character for character in characters if character.is_online])
+        glance_internal = len([character for character in characters if character.is_internal])
+
+        return self.render(
+            "admin.html",
+            glance_total=glance_total,
+            glance_online=glance_online,
+            glance_internal=glance_internal
+        )
+
+
 class AdminUsersPage(AuthPage):
 
     @login_required
@@ -624,6 +644,16 @@ class AdminUsersPage(AuthPage):
 
         return self.render("admin_users.html", users=users)
 
+
+class AdminCharactersPage(AuthPage):
+
+    @login_required
+    @internal_required
+    @admin_required
+    async def get(self):
+        characters = session.query(CharacterModel).all()
+
+        return self.render("admin_characters.html", characters=characters)
 
 class AdminGroupsPage(AuthPage):
 

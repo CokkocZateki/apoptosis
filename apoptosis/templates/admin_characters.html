@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+
+{% block title %}Character Administration{% end %}
+
+{% block body %}
+<div class="row characters_section">
+    <div class="col-sm-12">
+        <h1>{{ _('ADMIN_CHARACTERS_TITLE') }}</h1>
+        <p>{{ _('ADMIN_CHARACTERS_INTRO') }}</h1>
+    </div>
+</div>
+
+<div class="row characters_section">
+    <div class="col-sm-12">
+        <table class="table">
+            <thead class="thead-inverse">
+                <tr>
+                    <th>Character</th>
+                    <th>Current</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+            {% for character in characters %}
+                <tr>
+                    <td>
+                        {{ character.character_name }}
+                    </td>
+                    <td>
+                        {% if character.is_online %}
+                            online ({{ character.last_location.system }})
+                        {% else %}
+                            offline ({{ character.last_location }})
+                        {% end %}
+                    </td>
+                    <td>
+                        <a href="/admin/characters/detail?character_id={{ character.id }}">Details</a>
+                    </td>
+                </tr>
+            {% end %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% end %}

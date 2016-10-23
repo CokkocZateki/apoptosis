@@ -151,6 +151,17 @@ class CharacterModel(Base):
         return instance
 
     @property
+    def is_online(self):
+        return len(self.session_history) and self.session_history[-1].sign_out is None
+
+    @property
+    def last_location(self):
+        if len(self.location_history):
+            return self.location_history[-1]
+        else:
+            return None
+
+    @property
     def has_public_scopes(self):
         return True  # XXX get from scopesets
 

@@ -34,12 +34,11 @@
                     {% end %}
 
                     {% if current_user.is_hr %}
-                        <li class="nav-item"><a class="nav-link" href="/groups">{{ _('HR') }}</a></li>
+                        <li class="nav-item"><a class="nav-link" href="/hr">{{ _('HR') }}</a></li>
                     {% end %}
 
                     {% if current_user.is_admin %}
-                        <li class="nav-item"><a class="nav-link" href="/admin/groups">{{ _('GROUPS_ADMIN') }}</a></li>
-                        <li class="nav-item"><a class="nav-link" href="/admin/users">{{ _('USERS_ADMIN') }}</a></li>
+                        <li class="nav-item"><a class="nav-link" href="/admin">{{ _('ADMIN') }}</a></li>
                     {% end %}
 
                 {% end %}
