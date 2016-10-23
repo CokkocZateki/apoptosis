@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+
+{% block title %}Group Administration{% end %}
+
+{% block body %}
+<div class="row characters_section">
+    <div class="col-sm-12">
+        <h1>{{ _('ADMIN_GROUPS_TITLE') }}</h1>
+        <p>{{ _('ADMIN_GROUPS_INTRO') }}</h1>
+    </div>
+</div>
+<div class="row characters_section">
+    <a href="/admin/groups/create">{{ _('ADMIN_GROUPS_CREATE') }}</a>
+</div>
+<div class="row characters_section">
+    <div class="col-sm-12">
+        <table class="table">
+            <thead class="thead-inverse">
+                <tr>
+                    <th>Group</th>
+                    <th>Members</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+            {% for group in groups %}
+                <tr>
+                    <td>
+                        {{ group.name }}
+                    </td>
+                    <td>
+                        {{ len(group.memberships) }}
+                    </td>
+                    <td>
+                        <a href="/admin/groups/detail?character_id={{ character.id }}">Details</a>
+                    </td>
+                </tr>
+            {% end %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% end %}

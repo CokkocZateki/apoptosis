@@ -633,6 +633,25 @@ class AdminPage(AuthPage):
             glance_internal=glance_internal
         )
 
+class AdminGroupsPage(AuthPage):
+
+    @login_required
+    @internal_required
+    @admin_required
+    async def get(self):
+        groups = session.query(GroupModel).all()
+
+        return self.render("admin_groups.html", groups=groups)
+
+
+class AdminGroupsCreatePage(AuthPage):
+
+    @login_required
+    @internal_required
+    @admin_required
+    async def get(self):
+        return self.render("admin_groups_create.html")
+
 
 class AdminUsersPage(AuthPage):
 
