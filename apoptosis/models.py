@@ -114,9 +114,6 @@ class CharacterModel(Base):
     character_id = Column(Integer)
     character_name = Column(String)
 
-    corporation_id = Column(Integer)
-    corporation_name = Column(String)
-
     alliance_id = Column(Integer)
     alliance_name = Column(String)
 
@@ -142,13 +139,22 @@ class CharacterModel(Base):
         instance.character_id = response["character_id"]
         instance.character_name = response["character_name"]
 
+        # XXX history instance
         instance.corporation_id = response["corporation_id"]
         instance.corporation_name = response["corporation_name"]
 
+        # XXX history instance
         instance.alliance_id = response["alliance_id"]
         instance.alliance_name = response["alliance_name"]
 
         return instance
+
+    @property
+    def corporation(self):
+        if len(self.corporation_history):
+            return self.corporation_history[-1].corporation
+        else:
+            return None
 
     @property
     def is_online(self):
@@ -181,7 +187,7 @@ class CharacterModel(Base):
 
     @property
     def is_internal(self):
-        return self.corporation_name == "Hard Knocks Inc."  # XXX get from config
+        return self.corporation.name == "Hard Knocks Inc."  # XXX get from config
 
     def __repr__(self):
         return "<CharacterModel(id={}) {}>".format(self.id, self.character_name)
