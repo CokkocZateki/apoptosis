@@ -187,6 +187,21 @@ class CharacterModel(Base):
         return "<CharacterModel(id={}) {}>".format(self.id, self.character_name)
 
 
+class CharacterCorporationHistory(Base):
+    character_id = Column(Integer, ForeignKey("character.id"))
+    character = relationship("CharacterModel", backref="corporation_history")
+
+    corporation_id = Column(Integer, ForeignKey("evecorporation.id"))
+    corporation = relationship("EVECorporationModel")
+
+    join_date = Column(DateTime)
+    exit_date = Column(DateTime)
+
+    def __init__(self, character, corporation):
+        self.character = character
+        self.corporation = corporation
+
+
 class CharacterLocationHistory(Base):
     character_id = Column(Integer, ForeignKey("character.id"))
     character = relationship("CharacterModel", backref="location_history")
@@ -317,7 +332,17 @@ class EVECharacterModel(Base):
 
 class EVECorporationModel(Base):
     eve_id = Column(Integer)
-    eve_name = Column(String)
+    name = Column(String)
+
+    @classmethod
+    def from_id(cls, eve_id):
+        instance = session.query(cls).filter(cls.eve_id==eve_id).first()
+
+        if not instance:
+            instance = cls()
+            instance.eve_id = eve_id
+
+        return instance
 
 
 class EVEAllianceModel(Base):
