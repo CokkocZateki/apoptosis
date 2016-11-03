@@ -79,10 +79,10 @@ def refresh_character_corporation(character):
         session.add(session_entry)
         session.commit()
         return
-    elif len(character.corporation_history) and character.corporation_history[-1] is corporation:
+    elif len(character.corporation_history) and character.corporation_history[-1].corporation is corporation:
         # Character is still in the same corporation as the last time we checked, we need to do nothing
         return
-    elif len(character.corporation_history) and character.corporation_history[-1] is not corporation:
+    elif len(character.corporation_history) and character.corporation_history[-1].corporation is not corporation:
         # Character changed corporation, close the last one and create a new one
         previously = character.corporation_history[-1]
         previously.exit_date = datetime.now()
