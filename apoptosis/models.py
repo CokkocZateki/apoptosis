@@ -19,6 +19,8 @@ from apoptosis.eve import xml as xml_api
 from apoptosis.eve import crest as crest_api
 from apoptosis import config
 
+import anoikis.api.xml.corporations as xml_corporations
+
 
 engine = create_engine(config.database_uri)
 session = scoped_session(sessionmaker(autocommit=False,
@@ -347,6 +349,7 @@ class EVECorporationModel(Base):
         if not instance:
             instance = cls()
             instance.eve_id = eve_id
+            instance.name = xml_corporations.corporation_name(eve_id)
 
         return instance
 
