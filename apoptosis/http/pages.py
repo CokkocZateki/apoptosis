@@ -14,7 +14,6 @@ import tornado.httpclient
 
 from apoptosis.log import app_log, sec_log
 from apoptosis.services import slack
-from apoptosis.services import ts3
 from apoptosis.tools import localscan
 from apoptosis.cache import redis_cache
 from apoptosis import config
@@ -30,7 +29,6 @@ from apoptosis.models import (
     UserModel,
     UserLoginModel,
     CharacterModel,
-    TS3IdentityModel,
     SlackIdentityModel,
     GroupModel,
     MembershipModel
@@ -317,35 +315,6 @@ class ServicesPage(AuthPage):
     @login_required
     async def get(self):
         return self.render("services.html")
-
-
-class ServicesAddTS3IdentityPage(AuthPage):
-
-    @login_required
-    async def post(self):
-        teamspeak_id = self.get_argument("teamspeak_id", None)
-
-        if not teamspeak_id:
-            raise tornado.web.HTTPError(400)
-
-        ts3identity = TS3IdentityModel(teamspeak_id)
-        ts3identity.user = self.current_user
-
-        session.add(ts3identity)
-        session.commit()
-
-        sec_log.info("ts3identity {} added to {}".format(ts3identity, ts3identity.user))
-
-        return self.redirect("/services/add_teamspeak_identity/success?ts3identity_id={id}".format(id=ts3identity.id))
-
-
-class ServicesAddTS3IdentitySuccessPage(AuthPage):
-
-    @login_required
-    async def get(self):
-        ts3identity = self.model_by_id(TS3IdentityModel, "ts3identity_id")
-
-        return self.render("services_add_teamspeak_identity_success.html", ts3identity=ts3identity)
 
 
 class ServicesAddSlackIdentityPage(AuthPage):

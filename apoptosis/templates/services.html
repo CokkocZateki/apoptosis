@@ -12,55 +12,6 @@
 
 <div class="row services_section">
 	<div class="col-sm-12 col-md-5 col-lg-4">
-		<h3>{{ _('SERVICES_TEAMSPEAK_IDS_TITLE') }}</h3>
-		<p>{{ _('SERVICES_TEAMSPEAK_IDS_INTRO') }}</p>
-		<form method="POST" action="/services/add_teamspeak_identity">
-			<input type="hidden" name="_xsrf" value="{{ handler.xsrf_token }}">
-
-			<p>
-				<label for="teamspeak_id">{{ _('SERVICES_TEAMSPEAK_ID_LABEL') }}</label>
-				<input id="teamspeak_id" name="teamspeak_id" type="text" placeholder="{{ _('SERVICES_TEAMSPEAK_ID_PLACEHOLDER') }}">
-				<span class="help">{{ _('SERVICES_TEAMSPEAK_ID_HELP') }}</span>
-			</p>
-
-			<p>
-				<button type="submit">{{ _('ADD') }}</button>
-			</p>
-
-		</form>
-	</div>
-	<div class="col-sm-12 col-md-7 col-lg-8">
-		{% if not len(current_user.ts3_identities) %}
-		<p class="alert alert-warning">{{ _('SERVICES_TEAMSPEAK_NO_IDENTITIES') }}</p>
-		{% else %}
-		<table class="table">
-			<thead class="thead-inverse">
-				<tr>
-					<th>TeamSpeak 3 Identity</th>
-					<th>Actions</th>
-				</tr>
-			</thead>
-			<tbody>
-			{% for ts3_identity in current_user.ts3_identities %}
-				<tr>
-					<td>{{ ts3_identity.identity }}</td>
-					<td>
-						<form method="POST" action="/services/delete_teamspeak_identity">
-							<input type="hidden" name="_xsrf" value="{{ handler.xsrf_token }}">
-							<input type="hidden" name="ts3identity_id" value="{{ ts3_identity.id }}">
-							<button type="submit">{{ _('DELETE') }}</button>
-						</form>
-					</td>
-				</tr>
-			{% end %}
-			</tbody>
-		</table>
-		{% end %}
-	</div>
-</div>
-
-<div class="row services_section">
-	<div class="col-sm-12 col-md-5 col-lg-4">
 		<h3>{{ _('SERVICES_SLACK_IDS_TITLE') }}</h3>
 		<p>{{ _('SERVICES_SLACK_IDS_INTRO') }}</p>
 		<form method="POST" action="/services/add_slack_identity">

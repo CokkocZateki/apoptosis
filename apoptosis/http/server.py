@@ -14,8 +14,6 @@ from apoptosis.http.pages import (
     CharactersSelectMainPage,
     CharactersSelectMainSuccessPage,
     ServicesPage,
-    ServicesAddTS3IdentityPage,
-    ServicesAddTS3IdentitySuccessPage,
     ServicesAddSlackIdentityPage,
     ServicesAddSlackIdentitySuccessPage,
     ServicesSendVerificationSlackIdentityPage,
@@ -66,14 +64,6 @@ def make_app():
             (
                 r"/services",
                 ServicesPage
-            ),
-            (
-                r"/services/add_teamspeak_identity",
-                ServicesAddTS3IdentityPage
-            ),
-            (
-                r"/services/add_teamspeak_identity/success",
-                ServicesAddTS3IdentitySuccessPage
             ),
             (
                 r"/services/add_slack_identity",

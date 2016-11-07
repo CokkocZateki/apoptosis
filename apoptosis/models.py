@@ -242,12 +242,8 @@ class GroupModel(Base):
     description = Column(Text)
 
     has_slack = Column(Boolean)
-    has_ts3 = Column(Boolean)
 
     requires_approval = Column(Boolean)
-
-    def ts3_upkeep(self):
-        ts3.group_upkeep(self.slug)
 
     def slack_upkeep(self):
         slack.group_upkeep(self.slug)
@@ -285,16 +281,6 @@ class MembershipModel(Base):
 
     owner = Column(Boolean)
     moderator = Column(Boolean)
-
-
-class TS3IdentityModel(Base):
-    user_id = Column(Integer, ForeignKey("user.id"))
-    user = relationship("UserModel", backref="ts3_identities")
-
-    identity = Column(String)
-
-    def __init__(self, identity):
-        self.identity = identity
 
 
 class SlackIdentityModel(Base):
