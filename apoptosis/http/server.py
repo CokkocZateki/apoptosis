@@ -34,8 +34,6 @@ from apoptosis.http.pages import (
     AdminGroupsCreatePage,
     AdminUsersPage,
     AdminCharactersPage,
-    ToolsPage,
-    LocalScanPage
 )
 
 from apoptosis import config
@@ -104,14 +102,6 @@ def make_app():
             (
                 r"/groups/leave/success",
                 GroupsLeaveSuccessPage
-            ),
-            (
-                r"/tools",
-                ToolsPage
-            ),
-            (
-                r"/tools/localscan",
-                LocalScanPage
             ),
             (
                 r"/ping",

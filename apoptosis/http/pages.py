@@ -14,7 +14,6 @@ import tornado.httpclient
 
 from apoptosis.log import app_log, sec_log
 from apoptosis.services import slack
-from apoptosis.tools import localscan
 from apoptosis.cache import redis_cache
 from apoptosis import config
 from apoptosis.eve.crest import default_scopes
@@ -466,53 +465,6 @@ class GroupsLeaveSuccessPage(AuthPage):
 
         return self.render("groups_leave_success.html", group=group)
 
-
-class ToolsPage(AuthPage):
-
-    @login_required
-    @internal_required
-    async def get(self):
-        return self.render("tools.html")
-
-
-class LocalScanPage(AuthPage):
-
-    @login_required
-    @internal_required
-    async def get(self):
-        return self.render("localscan.html")
-
-
-class LocalScanCreatePage(AuthPage):
-
-    @login_required
-    @internal_required
-    async def get(self):
-        return self.render("localscan.html")
-
-
-class LocalScanCreateCreatePage(AuthPage):
-
-    @login_required
-    @internal_required
-    async def get(self):
-        return self.render("localscan.html")
-
-
-class LocalScanCreateSuccessPage(AuthPage):
-
-    @login_required
-    @internal_required
-    async def get(self):
-        return self.render("localscan.html")
-
-
-class LocalScanViewPage(AuthPage):
-
-    @login_required
-    @internal_required
-    async def get(self):
-        return self.render("localscan.html")
 
 class PingPage(AuthPage):
 
