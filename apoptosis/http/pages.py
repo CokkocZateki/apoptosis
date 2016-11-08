@@ -145,7 +145,7 @@ class LoginCallbackPage(AuthPage):
         # We don't have an account with this character on it yet. Let's fetch the 
         # character information from the XML API and fill it into a model, tie it
         # up to a fresh new user and log it in
-        character = await CharacterModel.from_xml_api(character_id)
+        character = await CharacterModel.from_api(character_id)
         character.access_token = access_token
         character.refresh_token = refresh_token
         character.account_hash = account_hash

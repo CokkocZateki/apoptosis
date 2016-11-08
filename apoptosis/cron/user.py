@@ -1,4 +1,4 @@
-from anoikis.api.crest import characters as crest_characters
+from anoikis.api.eve.crest import characters as crest_characters
 
 from apoptosis.models import session
 from apoptosis.models import UserModel, CharacterLocationHistory, CharacterSessionHistory, EVESolarSystemModel
@@ -70,6 +70,10 @@ def refresh_character_online(character):
 
 def refresh_character_corporation(character):
     corporation = crest_characters.character_corporation(character.character_id, character.access_token)
+
+    if corporation is None:
+        return  # XXX Why?
+
     corporation = EVECorporationModel.from_id(corporation)
 
     if not len(character.corporation_history):

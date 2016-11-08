@@ -15,11 +15,9 @@ from datetime import datetime
 from apoptosis.exceptions import InvalidAPIKey
 
 from apoptosis.services import slack
-from apoptosis.eve import xml as xml_api
-from apoptosis.eve import crest as crest_api
 from apoptosis import config
 
-import anoikis.api.xml.corporations as xml_corporations
+import anoikis.api.eve as eve_api
 
 
 engine = create_engine(config.database_uri)
@@ -130,24 +128,31 @@ class CharacterModel(Base):
 
 
     @classmethod
-    async def from_xml_api(cls, character_id):
+    async def from_api(cls, character_id):
         """Instantiate a new character model from the public EVE XML
            API through its character id."""
 
         instance = cls()
 
-        response = await xml_api.character(character_id)
+        character = eve_api.character_detail(character_id)
 
-        instance.character_id = response["character_id"]
-        instance.character_name = response["character_name"]
+        instance.character_id = character_id
+        instance.character_name = character["name"]
 
-        # XXX history instance
-        instance.corporation_id = response["corporation_id"]
-        instance.corporation_name = response["corporation_name"]
+        corporation = eve_api.corporation_detail(character["corporation_id"])
 
         # XXX history instance
-        instance.alliance_id = response["alliance_id"]
-        instance.alliance_name = response["alliance_name"]
+        instance.corporation_id = character["corporation_id"]
+        instance.corporation_name = corporation["name"]
+
+        # XXX history instance
+        instance.alliance_id = corporation["alliance_id"]
+
+        if corporation["alliance_id"] is not None:
+            alliance = eve_api.alliance_detail(corporation["alliance_id"])
+            instance.alliance_name = alliance["name"]
+        else:
+            instance.alliance_name = None
 
         return instance
 
@@ -335,7 +340,8 @@ class EVECorporationModel(Base):
         if not instance:
             instance = cls()
             instance.eve_id = eve_id
-            instance.name = xml_corporations.corporation_name(eve_id)
+            print("XXX", eve_id)
+            instance.name = eve_api.corporation_detail(eve_id)["name"]
 
         return instance
 
