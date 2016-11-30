@@ -1,5 +1,8 @@
 import tornado.ioloop
 import tornado.web
+import base64
+
+import json
 
 from apoptosis.models import (
     session,
@@ -78,3 +81,29 @@ class AuthPage(tornado.web.RequestHandler):
             self.clear_cookie("user_id")
         else:
             return self.set_secure_cookie("user_id", str(user.id))
+
+    def _flash(self, state, message):
+        if not self.get_secure_cookie("flashes"):
+            flashes = []
+        else:
+            flashes = json.loads(self.get_secure_cookie("flashes").decode("utf-8"))
+
+        flashes.append({"state": state, "message": message})
+
+        self.set_secure_cookie("flashes", json.dumps(flashes))
+
+    def flash_success(self, message):
+        self._flash("success", message)
+
+    def flash_error(self, message):
+        self._flash("error", message)
+
+    def flash_messages(self):
+        if not self.get_secure_cookie("flashes"):
+            flashes = []
+        else:
+            flashes = json.loads(self.get_secure_cookie("flashes").decode("utf-8"))
+
+        self.set_secure_cookie("flashes", json.dumps([]))
+
+        return base64.b64encode(json.dumps(flashes).encode("utf-8"))

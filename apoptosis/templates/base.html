@@ -47,10 +47,17 @@
         </nav>
 
         <div class="container">
+            <div class="row">
+                <div class="col-md-12" id="flash_messages">
+                </div>
+            </div>
             {% block body %}{% end %}
         </div>
 
         <script src="/static/js/jquery.js"></script>
+        <script type="text/javascript">
+            var flash_messages = $.parseJSON(atob('{% raw handler.flash_messages() %}'));
+        </script>
         <script src="/static/js/tether.js"></script>
         <script src="/static/js/bootstrap.js"></script>
         <script src="/static/js/app.js"></script>

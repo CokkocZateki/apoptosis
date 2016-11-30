@@ -246,29 +246,31 @@ class LoginCallbackPage(AuthPage):
 
 
 class LoginSuccessPage(AuthPage):
-
     @login_required
     async def get(self):
-        return self.render("login_success.html")
+        self.flash_success(self.locale.translate("LOGIN_SUCCESS_ALERT"))
+        return self.redirect("/")
 
 
 class LoginCreatedPage(AuthPage):
-
     @login_required
     async def get(self):
-        return self.render("login_created.html")
+        self.flash_success(self.locale.translate("LOGIN_CREATED_ALERT"))
+        return self.redirect("/")
+
 
 class LogoutPage(AuthPage):
-
     @login_required
     async def post(self):
         self.set_current_user(None)
 
         return self.redirect("/logout/success")
 
+
 class LogoutSuccessPage(AuthPage):
     async def get(self):
-        return self.render("logout_success.html")
+        self.flash_success(self.locale.translate("LOGOUT_SUCCESS_ALERT"))
+        return self.redirect("/")
 
 
 class HomePage(AuthPage):
@@ -303,10 +305,10 @@ class CharactersSelectMainPage(AuthPage):
 
 
 class CharactersSelectMainSuccessPage(AuthPage):
-
     @login_required
     async def get(self):
-        return self.render("characters_select_main_success.html")
+        self.flash_success(self.locale.translate("CHARACTERS_CHARACTERS_MAIN_SELECT_SUCCESS"))
+        return self.redirect("/characters")
 
 
 class ServicesPage(AuthPage):
@@ -337,12 +339,11 @@ class ServicesAddSlackIdentityPage(AuthPage):
 
 
 class ServicesAddSlackIdentitySuccessPage(AuthPage):
-
     @login_required
     async def get(self):
         slackidentity = self.model_by_id(SlackIdentityModel, "slackidentity_id")
-
-        return self.render("services_add_slack_identity_success.html", slackidentity=slackidentity)
+        self.flash_success(self.locale.translate("SERVICES_ADD_SLACK_IDENTITY_SUCCESS_ALERT"))
+        return self.redirect("/services")
 
 
 class ServicesSendVerificationSlackIdentityPage(AuthPage):
@@ -380,12 +381,11 @@ class ServicesVerifyVerificationSlackIdentityPage(AuthPage):
 
 
 class ServicesVerifySlackIdentitySuccessPage(AuthPage):
-
     @login_required
     async def get(self):
         slackidentity = self.model_by_id(SlackIdentityModel, "slackidentity_id")
-
-        return self.render("services_verify_slack_identity_success.html", slackidentity=slackidentity)
+        self.flash_success(self.locale.translate("SERVICES_VERIFY_SLACK_IDENTITY_SUCCESS_ALERT"))
+        return self.redirect("/services")
 
 
 class GroupsPage(AuthPage):
@@ -429,8 +429,11 @@ class GroupsJoinSuccessPage(AuthPage):
     @internal_required
     async def get(self):
         membership = self.model_by_id(MembershipModel, "membership_id")
-
-        return self.render("groups_join_success.html", membership=membership)
+        if membership.pending:
+            self.flash_success(self.locale.translate("GROUPS_JOIN_SUCCESS_PENDING_ALERT"))
+        else:
+            self.flash_success(self.locale.translate("GROUPS_JOIN_SUCCESS_DONE_ALERT"))
+        return self.redirect("/groups")
 
 
 class GroupsLeavePage(AuthPage):
@@ -462,8 +465,8 @@ class GroupsLeaveSuccessPage(AuthPage):
     @internal_required
     async def get(self):
         group = self.model_by_id(GroupModel, "group_id")
-
-        return self.render("groups_leave_success.html", group=group)
+        self.flash_success(self.locale.translate("GROUPS_LEAVE_SUCCESS_ALERT"))
+        return self.redirect("/groups")
 
 
 class PingPage(AuthPage):
@@ -500,7 +503,8 @@ class PingSendAllSuccessPage(AuthPage):
     @login_required
     @internal_required
     async def get(self):
-        return self.render("ping_all_success.html")
+        self.flash_success("foo")
+        return self.redirect("/groups")
 
 
 class PingSendGroupPage(AuthPage):
@@ -531,8 +535,8 @@ class PingSendGroupSuccessPage(AuthPage):
     @internal_required
     async def get(self):
         group = self.model_by_id(GroupModel, "group_id")
-
-        return self.render("ping_group_success.html", group=group)
+        self.flash_success("foo")
+        return self.redirect("/groups")
 
 
 class AdminPage(AuthPage):
