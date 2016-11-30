@@ -317,6 +317,19 @@ class ServicesPage(AuthPage):
     async def get(self):
         return self.render("services.html")
 
+class ServicesDeleteSlackIdentityPage(AuthPage):
+
+    @login_required
+    async def post(self):
+        slackidentity = self.model_by_id(SlackIdentityModel, "slackidentity_id")
+
+        session.delete(slackidentity)
+        session.commit()
+
+        self.flash_success(self.locale.translate("SERVICES_DELETE_SLACK_IDENTITY_SUCCESS_ALERT"))
+
+        return self.redirect("/services")
+
 
 class ServicesAddSlackIdentityPage(AuthPage):
 

@@ -14,6 +14,7 @@ from apoptosis.http.pages import (
     CharactersSelectMainPage,
     CharactersSelectMainSuccessPage,
     ServicesPage,
+    ServicesDeleteSlackIdentityPage,
     ServicesAddSlackIdentityPage,
     ServicesAddSlackIdentitySuccessPage,
     ServicesSendVerificationSlackIdentityPage,
@@ -62,6 +63,10 @@ def make_app():
             (
                 r"/services",
                 ServicesPage
+            ),
+            (
+                r"/services/delete_slack_identity",
+                ServicesDeleteSlackIdentityPage
             ),
             (
                 r"/services/add_slack_identity",
