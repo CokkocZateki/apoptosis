@@ -147,9 +147,9 @@ async def groups_upkeep(group_slugs):
     return True
 
 
-@cached(86400)
-def user_email_to_id(user_email):
-    users = slack_request("users.list")["members"]
+async def user_email_to_id(user_email):
+    users = await slack_request("users.list")
+    users = users["members"]
 
     for user in users:
         if user["profile"].get("email", None) == user_email:
@@ -161,14 +161,15 @@ def user_info(user_email):
     return slack_request("users.info", user=user_id)["user"]
 
 
-def verify(user_email):
-    message = "Hello, your authentication code is: {code}. Please paste this back into HK Auth so we can confirm you are the owner of this account,".format(code=identity.verification_code)
+async def verify(slackidentity):
+    message = "Hello, your authentication code is: {code}. Please paste this back into HK Auth so we can confirm you are the owner of this account,".format(code=slackidentity.verification_code)
+    return await private_message(slackidentity.email, message)
 
-    return private_message(user_email, message)
+async def private_message(user_email, message):
+    user_id = await user_email_to_id(user_email)
 
-def private_message(user_email, message):
-    user_id = user_email_to_id(user_email)
-    channel_id = slack_request("im.open", user=user_id)["channel"]["id"]
+    channel_id = await slack_request("im.open", user=user_id)
+    channel_id = channel_id["channel"]["id"]
 
-    return slack_request("chat.postMessage", channel=channel_id, text=message, username="apoptosis", parse="full")
+    return await slack_request("chat.postMessage", channel=channel_id, text=message, username="apoptosis", parse="full")
 

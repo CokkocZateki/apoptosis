@@ -351,7 +351,7 @@ class ServicesSendVerificationSlackIdentityPage(AuthPage):
     async def post(self):
         slackidentity = self.model_by_id(SlackIdentityModel, "slackidentity_id")
 
-        slack.send_verification(slackidentity.email)
+        await slack.verify(slackidentity)
 
         sec_log.info("slackidentity {} for {} sent verification".format(slackidentity, slackidentity.user))
 

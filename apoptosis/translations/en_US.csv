@@ -53,8 +53,6 @@
 "SERVICES_SLACK_ID_LABEL","E-mail"
 "SERVICES_SLACK_ID_PLACEHOLDER","foo"
 "SERVICES_SLACK_ID_HELP","bla bla"
-"SERVICES_FORUM_ID_TITLE","Forums"
-"SERVICES_FORUM_ID_INTRO","Use these credentials to log in to the forums. Any groups will automatically be assigned."
 "SERVICES_WIKI_ID_TITLE","Forums"
 "SERVICES_WIKI_ID_INTRO","Use these credentials to log in to the wiki."
 "GROUPS_TITLE","Group"
