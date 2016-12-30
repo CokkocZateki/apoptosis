@@ -19,6 +19,8 @@ from apoptosis import config
 
 import anoikis.api.eve as eve_api
 
+from anoikis.static.systems import system_name
+
 
 engine = create_engine(config.database_uri)
 session = scoped_session(sessionmaker(autocommit=False,
@@ -143,14 +145,14 @@ class CharacterModel(Base):
 
         # XXX history instance
         instance.corporation_id = character["corporation_id"]
-        instance.corporation_name = corporation["name"]
+        instance.corporation_name = corporation["corporation_name"]
 
         # XXX history instance
         instance.alliance_id = corporation["alliance_id"]
 
         if corporation["alliance_id"] is not None:
             alliance = eve_api.alliance_detail(corporation["alliance_id"])
-            instance.alliance_name = alliance["name"]
+            instance.alliance_name = alliance["alliance_name"]
         else:
             instance.alliance_name = None
 
@@ -320,6 +322,7 @@ class EVESolarSystemModel(Base):
         if not instance:
             instance = cls()
             instance.eve_id = eve_id
+            instance.eve_name = system_name(eve_id)
 
         return instance
 
@@ -340,8 +343,7 @@ class EVECorporationModel(Base):
         if not instance:
             instance = cls()
             instance.eve_id = eve_id
-            print("XXX", eve_id)
-            instance.name = eve_api.corporation_detail(eve_id)["name"]
+            instance.name = eve_api.corporation_detail(eve_id)["corporation_name"]
 
         return instance
 

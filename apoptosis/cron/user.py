@@ -1,24 +1,30 @@
-from anoikis.api.eve.crest import characters as crest_characters
+from anoikis.api.eve.esi import characters as esi_characters
 
 from apoptosis.models import session
 from apoptosis.models import UserModel, CharacterLocationHistory, CharacterSessionHistory, EVESolarSystemModel
 from apoptosis.models import CharacterCorporationHistory, EVECorporationModel
 
 from apoptosis import queue
-from apoptosis.log import eve_log
+from apoptosis.log import eve_log, job_log
 
 from datetime import datetime
 
 
 def setup():
+    job_log.info("user.setup")
+
     for user in session.query(UserModel).all():
         setup_user(user)
 
 def setup_user(user):
+    job_log.debug("user.setup_user {}".format(user))
+
     for character in user.characters:
         setup_character(character)
 
 def setup_character(character):
+    job_log.debug("user.setup_character {}".format(character.character_name))
+
     queue.add_recurring(15, refresh_character_online, character)
     queue.add_recurring(3600, refresh_character_corporation, character)
 
@@ -26,9 +32,13 @@ def refresh_character_online(character):
     """Refresh a characters online state and it's current location.
     
        XXX: maybe make a slower window the longer someone is offline?"""
-    system = crest_characters.character_location(character.character_id, character.access_token)
 
-    if not system:
+    job_log.debug("user.refresh_character_online {}".format(character.character_name))
+
+    system_id = esi_characters.location(character.character_id, access_token=character.access_token)
+    system_id = system_id["solar_system_id"]
+
+    if not system_id:
         # char is currently offline lets see if we have an entry in the session
         # history that shows him as online and update that
         if len(character.session_history) and character.session_history[-1].sign_out is None:
@@ -38,7 +48,7 @@ def refresh_character_online(character):
             session.add(character)
             session.commit()
 
-            eve_log.debug("{} signed out".format(character.character_name))
+            eve_log.info("{} signed out".format(character.character_name))
     else:
         # char is currently online. do we curently have an entry that shows
         # as online?
@@ -52,29 +62,33 @@ def refresh_character_online(character):
             
             session.add(session_entry)
 
-            eve_log.debug("{} signed in".format(character.character_name))
+            eve_log.info("{} signed in".format(character.character_name))
 
-        system = EVESolarSystemModel.from_id(system)
+        system = EVESolarSystemModel.from_id(system_id)
 
-        if len(character.location_history) and system.id is character.location_history[-1].id:
+        if len(character.location_history) and system.id is character.location_history[-1].system_id:
             # don't update location history if the user is still in the same system
             pass
         else:
             history_entry = CharacterLocationHistory(character, system)
 
-            eve_log.debug("{} moved to {}".format(character.character_name, system.eve_name))
+            eve_log.info("{} moved to {}".format(character.character_name, system.eve_name))
 
             session.add(history_entry)
             
         session.commit()
 
 def refresh_character_corporation(character):
-    corporation = crest_characters.character_corporation(character.character_id, character.access_token)
+    job_log.debug("user.refresh_character_corporation {}".format(character.character_name))
 
-    if corporation is None:
+    corporation_id = esi_characters.detail(character.character_id)
+
+    if corporation_id is None:
         return  # XXX Why?
 
-    corporation = EVECorporationModel.from_id(corporation)
+    corporation_id = corporation_id["corporation_id"]
+
+    corporation = EVECorporationModel.from_id(corporation_id)
 
     if not len(character.corporation_history):
         # This character has no corp history at all
@@ -99,7 +113,7 @@ def refresh_character_corporation(character):
 
         session.commit()
 
-        eve_log.debug("{} changed corporations {} -> {}".format(
+        eve_log.info("{} changed corporations {} -> {}".format(
             character.character_name,
             previously.corporation.name,
             currently.corporation.name)

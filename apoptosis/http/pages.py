@@ -16,7 +16,12 @@ from apoptosis.log import app_log, sec_log
 from apoptosis.services import slack
 from apoptosis.cache import redis_cache
 from apoptosis import config
-from apoptosis.eve.crest import default_scopes
+from apoptosis.eve.crest import default_scopes as crest_scopes
+from apoptosis.eve.esi import default_scopes as esi_scopes
+
+default_scopes = set()
+default_scopes.update(crest_scopes)
+default_scopes.update(esi_scopes)
 
 from apoptosis.http.base import (
     AuthPage

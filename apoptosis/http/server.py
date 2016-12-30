@@ -39,6 +39,7 @@ from apoptosis.http.pages import (
 
 from apoptosis import config
 from apoptosis.cron import user as cron_user
+from apoptosis.log import app_log
 
 
 def make_app():
@@ -184,6 +185,8 @@ def make_app():
     )
 
 def main():
+    app_log.info("starting application")
+
     app = make_app()
     app.listen(config.http_port)
 
