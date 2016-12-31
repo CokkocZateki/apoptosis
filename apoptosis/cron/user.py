@@ -2,7 +2,7 @@ from anoikis.api.eve.esi import characters as esi_characters
 
 from apoptosis.models import session
 from apoptosis.models import UserModel, CharacterLocationHistory, CharacterSessionHistory, EVESolarSystemModel
-from apoptosis.models import CharacterCorporationHistory, EVECorporationModel
+from apoptosis.models import CharacterCorporationHistory, EVECorporationModel, EVETypeModel, CharacterShipHistory
 
 from apoptosis import queue
 from apoptosis.log import eve_log, job_log
@@ -26,6 +26,7 @@ def setup_character(character):
     job_log.debug("user.setup_character {}".format(character.character_name))
 
     queue.add_recurring(15, refresh_character_online, character)
+    queue.add_recurring(60, refresh_character_ship, character)
     queue.add_recurring(3600, refresh_character_corporation, character)
 
 def refresh_character_online(character):
@@ -36,9 +37,8 @@ def refresh_character_online(character):
     job_log.debug("user.refresh_character_online {}".format(character.character_name))
 
     system_id = esi_characters.location(character.character_id, access_token=character.access_token)
-    system_id = system_id["solar_system_id"]
-
-    if not system_id:
+    
+    if system_id is None:
         # char is currently offline lets see if we have an entry in the session
         # history that shows him as online and update that
         if len(character.session_history) and character.session_history[-1].sign_out is None:
@@ -50,6 +50,8 @@ def refresh_character_online(character):
 
             eve_log.info("{} signed out".format(character.character_name))
     else:
+        system_id = system_id["solar_system_id"]
+
         # char is currently online. do we curently have an entry that shows
         # as online?
         if len(character.session_history) and character.session_history[-1].sign_out is None:
@@ -77,6 +79,33 @@ def refresh_character_online(character):
             session.add(history_entry)
             
         session.commit()
+
+def refresh_character_ship(character):
+    """Refresh a characters current ship."""
+    job_log.debug("user.refresh_character_ship {}".format(character.character_name))
+
+    type_id = esi_characters.ship(character.character_id, access_token=character.access_token)
+
+    if type_id is None:
+        return # XXX
+
+    item_id = type_id["ship_item_id"]
+    type_id = type_id["ship_type_id"]
+
+    eve_type = EVETypeModel.from_id(type_id)
+
+    if len(character.ship_history) and character.ship_history[-1].eve_type == eve_type:
+        pass
+    else:
+        eve_log.info("{} boarded {}".format(character.character_name, eve_type.eve_name))
+
+        history_entry = CharacterShipHistory(character, eve_type)
+        history_entry.eve_item_id = item_id
+
+        session.add(history_entry)
+
+    session.commit()
+
 
 def refresh_character_corporation(character):
     job_log.debug("user.refresh_character_corporation {}".format(character.character_name))

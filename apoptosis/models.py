@@ -20,6 +20,7 @@ from apoptosis import config
 import anoikis.api.eve as eve_api
 
 from anoikis.static.systems import system_name
+from anoikis.static.items import item_name
 
 
 engine = create_engine(config.database_uri)
@@ -231,6 +232,24 @@ class CharacterLocationHistory(Base):
         self.system = system
         self.when = datetime.now()
 
+
+class CharacterShipHistory(Base):
+    character_id = Column(Integer, ForeignKey("character.id"))
+    character = relationship("CharacterModel", backref="ship_history")
+
+    eve_type_id = Column(Integer, ForeignKey("evetype.id"))
+    eve_type = relationship("EVETypeModel")
+
+    eve_item_id = Column(Integer)
+
+    when = Column(DateTime)
+
+    def __init__(self, character, eve_type):
+        self.character = character
+        self.eve_type = eve_type
+        self.when = datetime.now()
+
+
 class CharacterSessionHistory(Base):
     character_id = Column(Integer, ForeignKey("character.id"))
     character = relationship("CharacterModel", backref="session_history")
@@ -323,6 +342,22 @@ class EVESolarSystemModel(Base):
             instance = cls()
             instance.eve_id = eve_id
             instance.eve_name = system_name(eve_id)
+
+        return instance
+
+
+class EVETypeModel(Base):
+    eve_id = Column(Integer)
+    eve_name = Column(String)
+
+    @classmethod
+    def from_id(cls, eve_id):
+        instance = session.query(cls).filter(cls.eve_id==eve_id).first()
+
+        if not instance:
+            instance = cls()
+            instance.eve_id = eve_id
+            instance.eve_name = item_name(eve_id)
 
         return instance
 
