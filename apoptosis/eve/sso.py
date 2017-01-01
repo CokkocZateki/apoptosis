@@ -36,8 +36,10 @@ sso_login = "https://login.eveonline.com/oauth/authorize?" + urlencode({
 def refresh_access_token(character):
     """Use a characters refresh token to request a new access token."""
     if character.refresh_token is None:
-        print("no refresh token for {}".format(character))
+        app_log.warn("no refresh token for {}".format(character))
         return
+
+    app_log.debug("refreshing access token for {}".format(character.name))
 
     client = tornado.httpclient.HTTPClient()
     request = tornado.httpclient.HTTPRequest(
@@ -57,9 +59,9 @@ def refresh_access_token(character):
     response = client.fetch(request)
     response = json.loads(response.body.decode("utf-8"))
 
-    print("got new at", response)
-
     character.access_token = response["access_token"]
+
+    app_log.debug("got new access token for".format(character.name))
 
     session.add(character)
     session.commit()
