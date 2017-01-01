@@ -188,7 +188,9 @@ class LoginCallbackPage(AuthPage):
 
         cron_user.setup_character(character)
 
-        self.redirect("/characters/add/success")
+        self.flash_success(self.locale.translate("CHARACTER_ADD_SUCCESS_ALERT"))
+
+        self.redirect("/characters")
 
     async def _login(self):
         character_id, character_scopes, access_token, refresh_token, account_hash = await self._sso_response()

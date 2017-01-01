@@ -71,6 +71,7 @@
 "LOGIN_OUTRO","By signing in to Hard Knocks Inc. services you agree to our terms and conditions."
 "LOGIN_SUCCESS_ALERT","You have succesfully logged in!"
 "LOGIN_CREATED_ALERT","We have created a new account for you!"
+"CHARACTER_ADD_SUCCESS_ALERT","The character has been succesfully added."
 "SERVICES_ADD_SLACK_IDENTITY_SUCCESS_ALERT","You've added a Slack E-mail"
 "SERVICES_VERIFY_SLACK_IDENTITY_TITLE","Verify your Slack E-Mail"
 "SERVICES_VERIFY_SLACK_IDENTITY_INTRO","Our Slack bot has sent you a verification code. Please paste it in the field below so we know you are the owner of the account."
