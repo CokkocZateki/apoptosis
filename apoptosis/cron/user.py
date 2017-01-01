@@ -1,4 +1,5 @@
 from anoikis.api.eve.esi import characters as esi_characters
+from anoikis.api.exceptions import InvalidToken
 
 from apoptosis.models import session
 from apoptosis.models import UserModel, CharacterLocationHistory, CharacterSessionHistory, EVESolarSystemModel
@@ -36,8 +37,12 @@ def refresh_character_online(character):
 
     job_log.debug("user.refresh_character_online {}".format(character.character_name))
 
-    system_id = esi_characters.location(character.character_id, access_token=character.access_token)
-    
+    try:
+        system_id = esi_characters.location(character.character_id, access_token=character.access_token)
+    except InvalidToken:
+        job_log.info("{} has invalid token".format(character.character_name))
+        return
+
     if system_id is None:
         # char is currently offline lets see if we have an entry in the session
         # history that shows him as online and update that
@@ -84,7 +89,11 @@ def refresh_character_ship(character):
     """Refresh a characters current ship."""
     job_log.debug("user.refresh_character_ship {}".format(character.character_name))
 
-    type_id = esi_characters.ship(character.character_id, access_token=character.access_token)
+    try:
+        type_id = esi_characters.ship(character.character_id, access_token=character.access_token)
+    except InvalidToken:
+        job_log.info("{} has invalid token".format(character.character_name))
+        return
 
     if type_id is None:
         return # XXX
