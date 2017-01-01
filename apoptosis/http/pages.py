@@ -16,12 +16,7 @@ from apoptosis.log import app_log, sec_log
 from apoptosis.services import slack
 from apoptosis.cache import redis_cache
 from apoptosis import config
-from apoptosis.eve.crest import default_scopes as crest_scopes
-from apoptosis.eve.esi import default_scopes as esi_scopes
-
-default_scopes = set()
-default_scopes.update(crest_scopes)
-default_scopes.update(esi_scopes)
+from apoptosis.eve.sso import sso_auth, sso_login
 
 from apoptosis.http.base import (
     AuthPage
@@ -39,17 +34,6 @@ from apoptosis.models import (
 )
 
 import apoptosis.cron.user as cron_user
-
-
-
-sso_auth = base64.b64encode("{}:{}".format(config.evesso_clientid, config.evesso_secretkey).encode("utf-8")).decode("ascii")
-sso_login = "https://login.eveonline.com/oauth/authorize?" + urlencode({
-    "response_type": "code",
-    "redirect_uri": config.evesso_callback,
-    "client_id": config.evesso_clientid,
-    "scope": " ".join(default_scopes),
-    "state": "foo"  # XXX make JWT
-})
 
 
 def login_required(func):

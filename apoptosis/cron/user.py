@@ -8,6 +8,8 @@ from apoptosis.models import CharacterCorporationHistory, EVECorporationModel, E
 from apoptosis import queue
 from apoptosis.log import eve_log, job_log
 
+from apoptosis.eve.sso import refresh_access_token
+
 from datetime import datetime
 
 
@@ -40,8 +42,9 @@ def refresh_character_online(character):
     try:
         system_id = esi_characters.location(character.character_id, access_token=character.access_token)
     except InvalidToken:
-        job_log.info("{} has invalid token".format(character.character_name))
-        return
+        refresh_access_token(character)
+
+        system_id = esi_characters.location(character.character_id, access_token=character.access_token)
 
     if system_id is None:
         # char is currently offline lets see if we have an entry in the session
@@ -92,8 +95,8 @@ def refresh_character_ship(character):
     try:
         type_id = esi_characters.ship(character.character_id, access_token=character.access_token)
     except InvalidToken:
-        job_log.info("{} has invalid token".format(character.character_name))
-        return
+        refresh_access_token(character)
+        type_id = esi_characters.ship(character.character_id, access_token=character.access_token)
 
     if type_id is None:
         return # XXX
