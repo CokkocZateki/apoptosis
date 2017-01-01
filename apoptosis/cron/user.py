@@ -1,4 +1,5 @@
 from anoikis.api.eve.esi import characters as esi_characters
+from anoikis.api.eve.crest import characters as crest_characters
 from anoikis.api.exceptions import InvalidToken
 
 from apoptosis.models import session
@@ -29,6 +30,7 @@ def setup_character(character):
     job_log.debug("user.setup_character {}".format(character.character_name))
 
     queue.add_recurring(15, refresh_character_online, character)
+    queue.add_recurring(15, refresh_character_location, character)
     queue.add_recurring(60, refresh_character_ship, character)
     queue.add_recurring(3600, refresh_character_corporation, character)
 
@@ -46,6 +48,28 @@ def refresh_character_online(character):
 
         system_id = esi_characters.location(character.character_id, access_token=character.access_token)
 
+    system_id = system_id["solar_system_id"]
+    system = EVESolarSystemModel.from_id(system_id)
+
+    if len(character.location_history) and system.id is character.location_history[-1].system_id:
+        # don't update location history if the user is still in the same system
+        pass
+    else:
+        history_entry = CharacterLocationHistory(character, system)
+        eve_log.info("{} moved to {}".format(character.character_name, system.eve_name))
+        session.add(history_entry)
+        
+    session.commit()
+
+def refresh_character_location(character):
+    """Refresh a characters current location."""
+    try:
+        system_id = crest_characters.location(character.character_id, access_token=character.access_token)
+    except InvalidToken:
+        refresh_access_token(character)
+
+        system_id = crest_characters.location(character.character_id, access_token=character.access_token)
+
     if system_id is None:
         # char is currently offline lets see if we have an entry in the session
         # history that shows him as online and update that
@@ -58,10 +82,6 @@ def refresh_character_online(character):
 
             eve_log.info("{} signed out".format(character.character_name))
     else:
-        system_id = system_id["solar_system_id"]
-
-        # char is currently online. do we curently have an entry that shows
-        # as online?
         if len(character.session_history) and character.session_history[-1].sign_out is None:
             # yep, continue
             pass
@@ -74,19 +94,8 @@ def refresh_character_online(character):
 
             eve_log.info("{} signed in".format(character.character_name))
 
-        system = EVESolarSystemModel.from_id(system_id)
+    session.commit()
 
-        if len(character.location_history) and system.id is character.location_history[-1].system_id:
-            # don't update location history if the user is still in the same system
-            pass
-        else:
-            history_entry = CharacterLocationHistory(character, system)
-
-            eve_log.info("{} moved to {}".format(character.character_name, system.eve_name))
-
-            session.add(history_entry)
-            
-        session.commit()
 
 def refresh_character_ship(character):
     """Refresh a characters current ship."""
