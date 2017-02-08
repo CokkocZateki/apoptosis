@@ -82,21 +82,21 @@ class UserLoginModel(Base):
     ip_address = Column(String)
 
 
-crestscope_x_character = Table(
-    "x_crestscope_character",
+esiscope_x_character = Table(
+    "x_esiscope_character",
     Base.metadata,
-    Column("crestscope_id", Integer, ForeignKey("crestscope.id")),
+    Column("esiscope_id", Integer, ForeignKey("esiscope.id")),
     Column("character_id", Integer, ForeignKey("character.id"))
 )
 
 
-class CRESTScopeModel(Base):
+class ESIScopeModel(Base):
     name = Column(String)
 
     characters = relationship(
         "CharacterModel",
-        secondary=crestscope_x_character,
-        backref="crest_scopes"
+        secondary=esiscope_x_character,
+        backref="esi_scopes"
     )
 
     def __init__(self, name):
@@ -121,18 +121,18 @@ class CharacterModel(Base):
     alliance_name = Column(String)
 
     def update_scopes(self, character_scopes):
-        for crestscope in character_scopes:
-            crestscope_model = session.query(CRESTScopeModel).filter(CRESTScopeModel.name==crestscope).first()
+        for esiscope in character_scopes:
+            esiscope_model = session.query(ESIScopeModel).filter(ESIScopeModel.name==esiscope).first()
 
-            if not crestscope_model:
-                crestscope_model = CRESTScopeModel(crestscope)
+            if not esiscope_model:
+                esiscope_model = ESIScopeModel(esiscope)
 
-            self.crest_scopes.append(crestscope_model)
+            self.esi_scopes.append(esiscope_model)
 
 
     @classmethod
     async def from_api(cls, character_id):
-        """Instantiate a new character model from the public EVE XML
+        """Instantiate a new character model from the public EVE ESI
            API through its character id."""
 
         instance = cls()
@@ -168,6 +168,7 @@ class CharacterModel(Base):
 
     @property
     def is_online(self):
+        print(self.session_history)
         return len(self.session_history) and self.session_history[-1].sign_out is None
 
     @property

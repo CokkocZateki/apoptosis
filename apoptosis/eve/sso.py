@@ -13,14 +13,12 @@ from apoptosis import config
 
 from apoptosis.models import session
 
-from apoptosis.eve.crest import default_scopes as crest_scopes
 from apoptosis.eve.esi import default_scopes as esi_scopes
 
 from anoikis.api.exceptions import InvalidToken, ExpiredToken
 
 
 default_scopes = set()
-default_scopes.update(crest_scopes)
 default_scopes.update(esi_scopes)
 
 sso_auth = base64.b64encode("{}:{}".format(config.evesso_clientid, config.evesso_secretkey).encode("utf-8")).decode("ascii")
