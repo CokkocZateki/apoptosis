@@ -12,7 +12,7 @@ import tornado.httpclient
 from apoptosis import config
 
 from apoptosis.models import session
-
+from apoptosis.log import app_log
 from apoptosis.eve.esi import default_scopes as esi_scopes
 
 from anoikis.api.exceptions import InvalidToken, ExpiredToken
@@ -37,7 +37,7 @@ def refresh_access_token(character):
         app_log.warn("no refresh token for {}".format(character))
         return
 
-    app_log.debug("refreshing access token for {}".format(character.name))
+    app_log.debug("refreshing access token for {}".format(character.character_name))
 
     client = tornado.httpclient.HTTPClient()
     request = tornado.httpclient.HTTPRequest(
@@ -59,7 +59,7 @@ def refresh_access_token(character):
 
     character.access_token = response["access_token"]
 
-    app_log.debug("got new access token for".format(character.name))
+    app_log.debug("got new access token for".format(character.character_name))
 
     session.add(character)
     session.commit()

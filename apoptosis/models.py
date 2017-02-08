@@ -19,6 +19,8 @@ from apoptosis import config
 
 import anoikis.api.eve as eve_api
 
+from anoikis.api.eve.esi import characters as esi_characters
+
 from anoikis.static.systems import system_name
 from anoikis.static.items import item_name
 
@@ -45,8 +47,9 @@ class UserModel(Base):
     chg_date = Column(DateTime)
 
     is_admin = Column(Boolean)
-    is_special = Column(Boolean)
-    is_hr = Column(Boolean)
+
+    is_special = Column(Boolean)  # XXX move to calculated property
+    is_hr = Column(Boolean)  # XXX move to calculated property
 
     @property
     def is_internal(self):
@@ -137,25 +140,22 @@ class CharacterModel(Base):
 
         instance = cls()
 
-        character = eve_api.character_detail(character_id)
+        character = esi_characters.detail(character_id) # XXX replace fully
 
         instance.character_id = character_id
         instance.character_name = character["name"]
 
-        corporation = eve_api.corporation_detail(character["corporation_id"])
+        corporation = EVECorporationModel.from_id(character["corporation_id"])
 
-        # XXX history instance
-        instance.corporation_id = character["corporation_id"]
-        instance.corporation_name = corporation["corporation_name"]
+        history_entry = CharacterCorporationHistory(instance, corporation)
+        history_entry.join_date = datetime.now()  # XXX fetch this from the actual join date?
 
-        # XXX history instance
-        instance.alliance_id = corporation["alliance_id"]
+        if "alliance_id" in character:
+            # XXX history instance
+            alliance = eve_api.alliance_detail(character["alliance_id"])
 
-        if corporation["alliance_id"] is not None:
-            alliance = eve_api.alliance_detail(corporation["alliance_id"])
+            instance.alliance_id = character["alliance_id"]
             instance.alliance_name = alliance["alliance_name"]
-        else:
-            instance.alliance_name = None
 
         return instance
 
@@ -273,7 +273,8 @@ class GroupModel(Base):
     requires_approval = Column(Boolean)
 
     def slack_upkeep(self):
-        slack.group_upkeep(self.slug)
+        if self.has_slack:
+            slack.group_upkeep(self.slug)
 
     @property
     def members(self):

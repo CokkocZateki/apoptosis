@@ -12,7 +12,7 @@ async def _recurring(key, interval, f, *args, **kwargs):
         if not key in _tasks:
             return
 
-        f(*args, **kwargs)
+        f.delay(*args, **kwargs)
         await tornado.gen.sleep(interval)
 
 

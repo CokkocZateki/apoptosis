@@ -1,11 +1,15 @@
+import celery
+
 from anoikis.api.eve.esi import characters as esi_characters
 from anoikis.api.exceptions import InvalidToken
 
 from apoptosis.models import session
-from apoptosis.models import UserModel, CharacterLocationHistory, EVESolarSystemModel
+from apoptosis.models import UserModel, CharacterModel, CharacterLocationHistory, EVESolarSystemModel
 from apoptosis.models import CharacterCorporationHistory, EVECorporationModel, EVETypeModel, CharacterShipHistory
 
-from apoptosis import queue
+from apoptosis.queue.celery import celery_queue
+from apoptosis.queue import scheduler
+
 from apoptosis.log import eve_log, job_log
 
 from apoptosis.eve.sso import refresh_access_token
@@ -28,12 +32,18 @@ def setup_user(user):
 def setup_character(character):
     job_log.debug("user.setup_character {}".format(character.character_name))
 
-    queue.add_recurring(15, refresh_character_location, character)
-    queue.add_recurring(60, refresh_character_ship, character)
-    queue.add_recurring(3600, refresh_character_corporation, character)
+    scheduler.add_recurring(15, refresh_character_location, character.id)
+    scheduler.add_recurring(60, refresh_character_ship, character.id)
+    scheduler.add_recurring(3600, refresh_character_corporation, character.id)
 
-def refresh_character_location(character):
+@celery_queue.task
+def refresh_character_location(character_id):
     """Refresh a characters current location."""
+
+    character = session.query(CharacterModel).filter(CharacterModel.id==character_id).one()
+
+    job_log.debug("user.refresh_character_location {}".format(character.character_name))
+
     try:
         system_id = esi_characters.location(character.character_id, access_token=character.access_token)
     except InvalidToken:
@@ -55,8 +65,11 @@ def refresh_character_location(character):
         session.add(history_entry)
 
 
-def refresh_character_ship(character):
+@celery_queue.task
+def refresh_character_ship(character_id):
     """Refresh a characters current ship."""
+    character = session.query(CharacterModel).filter(CharacterModel.id==character_id).one()
+
     job_log.debug("user.refresh_character_ship {}".format(character.character_name))
 
     try:
@@ -85,8 +98,10 @@ def refresh_character_ship(character):
 
     session.commit()
 
+@celery_queue.task
+def refresh_character_corporation(character_id):
+    character = session.query(CharacterModel).filter(CharacterModel.id==character_id).one()
 
-def refresh_character_corporation(character):
     job_log.debug("user.refresh_character_corporation {}".format(character.character_name))
 
     corporation_id = esi_characters.detail(character.character_id)
@@ -129,5 +144,5 @@ def refresh_character_corporation(character):
 
         return
 
-def refresh_character(character):
+def refresh_character(character_id):
     pass

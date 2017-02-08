@@ -33,7 +33,7 @@ from apoptosis.models import (
     MembershipModel
 )
 
-import apoptosis.cron.user as cron_user
+import apoptosis.queue.user as queue_user 
 
 
 def login_required(func):
@@ -170,7 +170,7 @@ class LoginCallbackPage(AuthPage):
 
         sec_log.info("added %s for %s" % (character, character.user))
 
-        cron_user.setup_character(character)
+        queue_user.setup_character(character)
 
         self.flash_success(self.locale.translate("CHARACTER_ADD_SUCCESS_ALERT"))
 
@@ -229,7 +229,7 @@ class LoginCallbackPage(AuthPage):
             session.add(login)
             session.commit()
 
-            cron_user.setup_character(character)
+            queue_user.setup_character(character)
 
             # Redirect to another page with some more information for the user of what
             # is going on
@@ -552,13 +552,11 @@ class AdminPage(AuthPage):
         characters = [character for character in session.query(CharacterModel).all()]
 
         glance_total = len(characters)
-        glance_online = len([character for character in characters if character.is_online])
         glance_internal = len([character for character in characters if character.is_internal])
 
         return self.render(
             "admin.html",
             glance_total=glance_total,
-            glance_online=glance_online,
             glance_internal=glance_internal
         )
 
@@ -578,8 +576,22 @@ class AdminGroupsCreatePage(AuthPage):
     @login_required
     @internal_required
     @admin_required
-    async def get(self):
-        return self.render("admin_groups_create.html")
+    async def post(self):
+        # XXX check if already exists
+        group = GroupModel()
+
+        group.name = self.get_argument("group_name")
+        group.slug = self.get_argument("group_slug")
+        group.description = self.get_argument("group_description")
+        group.has_slack = self.get_argument("group_has_slack")
+        group.requires_approvial = self.get_argument("group_requires_approval")
+
+        session.add(group)
+        session.commit()
+
+        self.flash_success(self.locale.translate("GROUP_ADD_SUCCESS_ALERT"))
+
+        self.redirect("/admin/groups")
 
 
 class AdminUsersPage(AuthPage):

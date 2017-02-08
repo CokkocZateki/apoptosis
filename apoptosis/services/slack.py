@@ -169,7 +169,11 @@ async def private_message(user_email, message):
     user_id = await user_email_to_id(user_email)
 
     channel_id = await slack_request("im.open", user=user_id)
-    channel_id = channel_id["channel"]["id"]
+    try:
+        channel_id = channel_id["channel"]["id"]
+    except:
+        print("XXXXXX", channel_id)
+        raise
 
     return await slack_request("chat.postMessage", channel=channel_id, text=message, username="apoptosis", parse="full")
 

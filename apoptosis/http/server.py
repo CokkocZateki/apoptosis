@@ -38,7 +38,7 @@ from apoptosis.http.pages import (
 )
 
 from apoptosis import config
-from apoptosis.cron import user as cron_user
+from apoptosis.queue import user as queue_user
 from apoptosis.log import app_log
 
 
@@ -190,7 +190,7 @@ def main():
     app = make_app()
     app.listen(config.http_port)
 
-    cron_user.setup()
+    queue_user.setup()
 
     tornado.locale.load_translations(config.tornado_translations)
     tornado.ioloop.IOLoop.current().start()
