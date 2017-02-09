@@ -219,6 +219,20 @@ class CharacterCorporationHistory(Base):
         self.corporation = corporation
 
 
+class CharacterAllianceHistory(Base):
+    character_id = Column(Integer, ForeignKey("character.id"))
+    character = relationship("CharacterModel", backref="alliance_history")
+
+    alliance_id = Column(Integer, ForeignKey("evealliance.id"))
+    alliance = relationship("EVEAllianceModel")
+
+    join_date = Column(DateTime)
+    exit_date = Column(DateTime)
+
+    def __init__(self, character, alliance):
+        self.character = character
+        self.alliance = alliance
+
 class CharacterLocationHistory(Base):
     character_id = Column(Integer, ForeignKey("character.id"))
     character = relationship("CharacterModel", backref="location_history")
@@ -257,6 +271,21 @@ class CharacterSessionHistory(Base):
 
     sign_in = Column(DateTime)
     sign_out = Column(DateTime)
+
+    def __init__(self, character):
+        self.character = character
+
+
+class CharacterSkillModel(Base):
+    character_id = Column(Integer, ForeignKey("character.id"))
+    character = relationship("CharacterModel", backref="skills")
+
+    eve_skill_id = Column(Integer, ForeignKey("eveskill.id"))
+    eve_skill = relationship("EVESkillModel")
+
+    level = Column(Integer)
+
+    points = Column(Integer)
 
     def __init__(self, character):
         self.character = character
@@ -381,6 +410,22 @@ class EVECorporationModel(Base):
             instance = cls()
             instance.eve_id = eve_id
             instance.name = eve_api.corporation_detail(eve_id)["corporation_name"]
+
+        return instance
+
+
+class EVESkillModel(Base):
+    eve_id = Column(Integer)
+    eve_name = Column(String)
+
+    @classmethod
+    def from_id(cls, eve_id):
+        instance = session.query(cls).filter(cls.eve_id==eve_id).first()
+
+        if not instance:
+            instance = cls()
+            instance.eve_id = eve_id
+            instance.eve_name = item_name(eve_id)
 
         return instance
 

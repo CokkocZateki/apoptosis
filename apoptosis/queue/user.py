@@ -8,6 +8,7 @@ from anoikis.api.exceptions import InvalidToken
 from apoptosis.models import session
 from apoptosis.models import UserModel, CharacterModel, CharacterLocationHistory, EVESolarSystemModel
 from apoptosis.models import CharacterCorporationHistory, EVECorporationModel, EVETypeModel, CharacterShipHistory
+from apoptosis.models import CharacterSkillModel, EVESkillModel
 
 from apoptosis.queue.celery import celery_queue
 
@@ -36,6 +37,7 @@ def setup_character(character):
     refresh_character_location.apply_async(args=(character.id,), countdown=random.randint(0, 120))
     refresh_character_ship.apply_async(args=(character.id,), countdown=random.randint(0, 120))
     refresh_character_corporation.apply_async(args=(character.id,), countdown=random.randint(0, 120))
+    refresh_character_skills.apply_async(args=(character.id,), countdown=random.randint(0, 120))
 
 @celery_queue.task(ignore_result=True)
 def refresh_character_location(character_id, recurring=30):
@@ -142,6 +144,51 @@ def refresh_character_corporation(character_id, recurring=3600):
                 previously.corporation.name,
                 currently.corporation.name)
             )
+
+    if recurring:
+        refresh_character_corporation.apply_async(args=(character_id, recurring), countdown=recurring)
+
+@celery_queue.task(ignore_result=True)
+def refresh_character_skills(character_id, recurring=14400):
+    character = session.query(CharacterModel).filter(CharacterModel.id==character_id).one()
+
+    job_log.debug("user.refresh_character_skills {}".format(character.character_name))
+
+    try:
+        skills = esi_characters.skills(character.character_id, access_token=character.access_token)
+    except InvalidToken:
+        refresh_access_token(character)
+        skills = esi_characters.skills(character.character_id, access_token=character.access_token)
+
+    if "skills" in skills:
+        skills = skills["skills"]
+
+        for skill in skills:
+            skill_id = skill["skill_id"]
+
+            eveskill = EVESkillModel.from_id(skill_id)
+
+            session.add(eveskill)
+            session.commit()
+
+            skill_level = skill["current_skill_level"]
+            skill_points = skill["skillpoints_in_skill"]
+
+            characterskill = session.query(CharacterSkillModel).filter(
+                CharacterSkillModel.character_id==character.id,
+                CharacterSkillModel.eve_skill_id==eveskill.id
+            ).one_or_none()
+
+            if characterskill is None:
+                characterskill = CharacterSkillModel(character)
+                characterskill.eve_skill = eveskill
+
+            # XXX notify change?
+            characterskill.level = skill_level
+            characterskill.points = skill_points
+
+            session.add(characterskill)
+            session.commit()
 
     if recurring:
         refresh_character_corporation.apply_async(args=(character_id, recurring), countdown=recurring)
