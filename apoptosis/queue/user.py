@@ -1,3 +1,5 @@
+import random
+
 import celery
 
 from anoikis.api.eve.esi import characters as esi_characters
@@ -8,7 +10,6 @@ from apoptosis.models import UserModel, CharacterModel, CharacterLocationHistory
 from apoptosis.models import CharacterCorporationHistory, EVECorporationModel, EVETypeModel, CharacterShipHistory
 
 from apoptosis.queue.celery import celery_queue
-from apoptosis.queue import scheduler
 
 from apoptosis.log import eve_log, job_log
 
@@ -32,12 +33,12 @@ def setup_user(user):
 def setup_character(character):
     job_log.debug("user.setup_character {}".format(character.character_name))
 
-    scheduler.add_recurring(15, refresh_character_location, character.id)
-    scheduler.add_recurring(60, refresh_character_ship, character.id)
-    scheduler.add_recurring(3600, refresh_character_corporation, character.id)
+    refresh_character_location.apply_async(args=(character.id,), countdown=random.randint(0, 60))
+    refresh_character_ship.apply_async(args=(character.id,), countdown=random.randint(0, 60))
+    refresh_character_corporation.apply_async(args=(character.id,), countdown=random.randint(0, 60))
 
 @celery_queue.task
-def refresh_character_location(character_id):
+def refresh_character_location(character_id, recurring=30):
     """Refresh a characters current location."""
 
     character = session.query(CharacterModel).filter(CharacterModel.id==character_id).one()
@@ -50,23 +51,23 @@ def refresh_character_location(character_id):
         refresh_access_token(character)
         system_id = esi_characters.location(character.character_id, access_token=character.access_token)
 
-    if system_id is None:
-        return # XXX
+    if system_id is not None:
+        system_id = system_id["solar_system_id"]
+        system = EVESolarSystemModel.from_id(system_id)
 
-    system_id = system_id["solar_system_id"]
-    system = EVESolarSystemModel.from_id(system_id)
+        if len(character.location_history) and system.id is character.location_history[-1].system_id:
+            # don't update location history if the user is still in the same system
+            pass
+        else:
+            history_entry = CharacterLocationHistory(character, system)
+            eve_log.info("{} moved to {}".format(character.character_name, system.eve_name))
+            session.add(history_entry)
 
-    if len(character.location_history) and system.id is character.location_history[-1].system_id:
-        # don't update location history if the user is still in the same system
-        pass
-    else:
-        history_entry = CharacterLocationHistory(character, system)
-        eve_log.info("{} moved to {}".format(character.character_name, system.eve_name))
-        session.add(history_entry)
-
+    if recurring:
+        refresh_character_location.apply_async(args=(character_id, recurring), countdown=recurring)
 
 @celery_queue.task
-def refresh_character_ship(character_id):
+def refresh_character_ship(character_id, recurring=60):
     """Refresh a characters current ship."""
     character = session.query(CharacterModel).filter(CharacterModel.id==character_id).one()
 
@@ -78,71 +79,72 @@ def refresh_character_ship(character_id):
         refresh_access_token(character)
         type_id = esi_characters.ship(character.character_id, access_token=character.access_token)
 
-    if type_id is None:
-        return # XXX
+    if type_id is not None:
+        item_id = type_id["ship_item_id"]
+        type_id = type_id["ship_type_id"]
 
-    item_id = type_id["ship_item_id"]
-    type_id = type_id["ship_type_id"]
+        eve_type = EVETypeModel.from_id(type_id)
 
-    eve_type = EVETypeModel.from_id(type_id)
+        if len(character.ship_history) and character.ship_history[-1].eve_type == eve_type:
+            pass
+        else:
+            eve_log.info("{} boarded {}".format(character.character_name, eve_type.eve_name))
 
-    if len(character.ship_history) and character.ship_history[-1].eve_type == eve_type:
-        pass
-    else:
-        eve_log.info("{} boarded {}".format(character.character_name, eve_type.eve_name))
+            history_entry = CharacterShipHistory(character, eve_type)
+            history_entry.eve_item_id = item_id
 
-        history_entry = CharacterShipHistory(character, eve_type)
-        history_entry.eve_item_id = item_id
+            session.add(history_entry)
 
-        session.add(history_entry)
+        session.commit()
 
-    session.commit()
+    if recurring:
+        refresh_character_ship.apply_async(args=(character_id, recurring), countdown=recurring)
+
 
 @celery_queue.task
-def refresh_character_corporation(character_id):
+def refresh_character_corporation(character_id, recurring=3600):
     character = session.query(CharacterModel).filter(CharacterModel.id==character_id).one()
 
     job_log.debug("user.refresh_character_corporation {}".format(character.character_name))
 
     corporation_id = esi_characters.detail(character.character_id)
 
-    if corporation_id is None:
-        return  # XXX Why?
+    if corporation_id is not None:
+        corporation_id = corporation_id["corporation_id"]
 
-    corporation_id = corporation_id["corporation_id"]
+        corporation = EVECorporationModel.from_id(corporation_id)
 
-    corporation = EVECorporationModel.from_id(corporation_id)
+        if not len(character.corporation_history):
+            # This character has no corp history at all
+            session_entry = CharacterCorporationHistory(character, corporation)
+            session_entry.join_date = datetime.now()  # XXX fetch this from the actual join date?
+            session.add(session_entry)
+            session.commit()
+            return
+        elif len(character.corporation_history) and character.corporation_history[-1].corporation is corporation:
+            # Character is still in the same corporation as the last time we checked, we need to do nothing
+            return
+        elif len(character.corporation_history) and character.corporation_history[-1].corporation is not corporation:
+            # Character changed corporation, close the last one and create a new one
+            previously = character.corporation_history[-1]
+            previously.exit_date = datetime.now()
 
-    if not len(character.corporation_history):
-        # This character has no corp history at all
-        session_entry = CharacterCorporationHistory(character, corporation)
-        session_entry.join_date = datetime.now()  # XXX fetch this from the actual join date?
-        session.add(session_entry)
-        session.commit()
-        return
-    elif len(character.corporation_history) and character.corporation_history[-1].corporation is corporation:
-        # Character is still in the same corporation as the last time we checked, we need to do nothing
-        return
-    elif len(character.corporation_history) and character.corporation_history[-1].corporation is not corporation:
-        # Character changed corporation, close the last one and create a new one
-        previously = character.corporation_history[-1]
-        previously.exit_date = datetime.now()
+            currently = CharacterCorporationHistory(character, corporation)
+            currently.join_date = datetime.now()
+            
+            session.add(currently)
+            session.add(previously)
 
-        currently = CharacterCorporationHistory(character, corporation)
-        currently.join_date = datetime.now()
-        
-        session.add(currently)
-        session.add(previously)
+            session.commit()
 
-        session.commit()
+            eve_log.info("{} changed corporations {} -> {}".format(
+                character.character_name,
+                previously.corporation.name,
+                currently.corporation.name)
+            )
 
-        eve_log.info("{} changed corporations {} -> {}".format(
-            character.character_name,
-            previously.corporation.name,
-            currently.corporation.name)
-        )
-
-        return
+    if recurring:
+        refresh_character_corporation.apply_async(args=(character_id, recurring), countdown=recurring)
 
 def refresh_character(character_id):
     pass
