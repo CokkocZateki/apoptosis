@@ -33,11 +33,11 @@ def setup_user(user):
 def setup_character(character):
     job_log.debug("user.setup_character {}".format(character.character_name))
 
-    refresh_character_location.apply_async(args=(character.id,), countdown=random.randint(0, 60))
-    refresh_character_ship.apply_async(args=(character.id,), countdown=random.randint(0, 60))
-    refresh_character_corporation.apply_async(args=(character.id,), countdown=random.randint(0, 60))
+    refresh_character_location.apply_async(args=(character.id,), countdown=random.randint(0, 120))
+    refresh_character_ship.apply_async(args=(character.id,), countdown=random.randint(0, 120))
+    refresh_character_corporation.apply_async(args=(character.id,), countdown=random.randint(0, 120))
 
-@celery_queue.task
+@celery_queue.task(ignore_result=True)
 def refresh_character_location(character_id, recurring=30):
     """Refresh a characters current location."""
 
@@ -66,7 +66,7 @@ def refresh_character_location(character_id, recurring=30):
     if recurring:
         refresh_character_location.apply_async(args=(character_id, recurring), countdown=recurring)
 
-@celery_queue.task
+@celery_queue.task(ignore_result=True)
 def refresh_character_ship(character_id, recurring=60):
     """Refresh a characters current ship."""
     character = session.query(CharacterModel).filter(CharacterModel.id==character_id).one()
@@ -101,7 +101,7 @@ def refresh_character_ship(character_id, recurring=60):
         refresh_character_ship.apply_async(args=(character_id, recurring), countdown=recurring)
 
 
-@celery_queue.task
+@celery_queue.task(ignore_result=True)
 def refresh_character_corporation(character_id, recurring=3600):
     character = session.query(CharacterModel).filter(CharacterModel.id==character_id).one()
 
