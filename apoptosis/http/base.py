@@ -71,7 +71,9 @@ class AuthPage(tornado.web.RequestHandler):
         if not user:
             # This was a cookie for a non-existing user
             app_log.warn("Cookie with id:{} was used to try to login but no user by that id".format(user_id))
-            raise tornado.web.HTTPError(500)
+
+            self.clear_cookie("user_id")
+            return self.redirect("/")
 
         return user
 
