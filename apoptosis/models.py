@@ -117,10 +117,10 @@ class CharacterModel(Base):
     refresh_token = Column(String)
     access_token = Column(String)
 
-    character_id = Column(Integer)
+    character_id = Column(BigInteger)
     character_name = Column(String)
 
-    alliance_id = Column(Integer)
+    alliance_id = Column(BigInteger)
     alliance_name = Column(String)
 
     def update_scopes(self, character_scopes):
@@ -177,6 +177,17 @@ class CharacterModel(Base):
             return self.location_history[-1]
         else:
             return None
+
+    @property
+    def last_ship(self):
+        if len(self.ship_history):
+            return self.ship_history[-1]
+        else:
+            return None
+
+    @property
+    def sp(self):
+        return sum(s.points for s in self.skills)
 
     @property
     def has_public_scopes(self):
@@ -255,7 +266,7 @@ class CharacterShipHistory(Base):
     eve_type_id = Column(Integer, ForeignKey("evetype.id"))
     eve_type = relationship("EVETypeModel")
 
-    eve_item_id = Column(Integer)
+    eve_item_id = Column(BigInteger)
 
     when = Column(DateTime)
 
@@ -283,9 +294,9 @@ class CharacterSkillModel(Base):
     eve_skill_id = Column(Integer, ForeignKey("eveskill.id"))
     eve_skill = relationship("EVESkillModel")
 
-    level = Column(Integer)
+    level = Column(BigInteger)
 
-    points = Column(Integer)
+    points = Column(BigInteger)
 
     def __init__(self, character):
         self.character = character
@@ -362,7 +373,7 @@ class SlackIdentityModel(Base):
 
 
 class EVESolarSystemModel(Base):
-    eve_id = Column(Integer)
+    eve_id = Column(BigInteger)
     eve_name = Column(String)
 
     @classmethod
@@ -378,7 +389,7 @@ class EVESolarSystemModel(Base):
 
 
 class EVETypeModel(Base):
-    eve_id = Column(Integer)
+    eve_id = Column(BigInteger)
     eve_name = Column(String)
 
     @classmethod
@@ -394,12 +405,12 @@ class EVETypeModel(Base):
 
 
 class EVECharacterModel(Base):
-    eve_id = Column(Integer)
+    eve_id = Column(BigInteger)
     eve_name = Column(String)
 
 
 class EVECorporationModel(Base):
-    eve_id = Column(Integer)
+    eve_id = Column(BigInteger)
     name = Column(String)
 
     @classmethod
@@ -415,7 +426,7 @@ class EVECorporationModel(Base):
 
 
 class EVESkillModel(Base):
-    eve_id = Column(Integer)
+    eve_id = Column(BigInteger)
     eve_name = Column(String)
 
     @classmethod
@@ -431,7 +442,7 @@ class EVESkillModel(Base):
 
 
 class EVEAllianceModel(Base):
-    eve_id = Column(Integer)
+    eve_id = Column(BigInteger)
     eve_name = Column(String)
 
 

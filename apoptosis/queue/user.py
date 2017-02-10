@@ -5,7 +5,7 @@ import celery
 from anoikis.api.eve.esi import characters as esi_characters
 from anoikis.api.exceptions import InvalidToken
 
-from apoptosis.models import session
+from apoptosis.models import session 
 from apoptosis.models import UserModel, CharacterModel, CharacterLocationHistory, EVESolarSystemModel
 from apoptosis.models import CharacterCorporationHistory, EVECorporationModel, EVETypeModel, CharacterShipHistory
 from apoptosis.models import CharacterSkillModel, EVESkillModel
@@ -64,6 +64,8 @@ def refresh_character_location(character_id, recurring=30):
             history_entry = CharacterLocationHistory(character, system)
             eve_log.info("{} moved to {}".format(character.character_name, system.eve_name))
             session.add(history_entry)
+
+    session.commit()
 
     if recurring:
         refresh_character_location.apply_async(args=(character_id, recurring), countdown=recurring)

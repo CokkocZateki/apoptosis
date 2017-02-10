@@ -13,6 +13,12 @@ from apoptosis.log import app_log
 
 
 class AuthPage(tornado.web.RequestHandler):
+    def prepare(self):
+        session.commit()
+
+    def on_finish(self):
+        session.flush()
+
     def requires_login(self):
         if not self.current_user:
             raise tornado.web.HTTPError(401)

@@ -23,8 +23,8 @@ from apoptosis.http.base import (
 )
 
 
-from apoptosis.models import session
 from apoptosis.models import (
+    session,
     UserModel,
     UserLoginModel,
     CharacterModel,

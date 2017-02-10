@@ -87,7 +87,6 @@ tr.internal {
 }
 
 tr.main {
-	font-weight: bold;
 }
 
 p#current_user {
@@ -101,4 +100,10 @@ p#current_user a {
 
 p#current_user a:hover {
 	text-decoration: none;
+}
+
+span.pending {
+    color: #ccc;
+    font-style: italic;
+    font-size: 80%;
 }

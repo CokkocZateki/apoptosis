@@ -12,46 +12,10 @@
 
 <div class="row characters_section">
     <div class="col-sm-12 col-md-7 col-lg-8">
-        {% if not len(current_user.characters) %}
-        <p class="alert alert-warning">{{ _('CHARACTERS_CHARACTERS_NO_CHARACTERS') }}</p>
-        {% else %}
-        <table class="table">
-            <thead class="thead-inverse">
-                <tr>
-                    <th></th>
-                    <th>Character</th>
-                    <th>Corporation</th>
-                    <th>Alliance</th>
-                </tr>
-            </thead>
-            <tbody>
-            {% for character in current_user.characters %}
-                {% if character.is_internal %}
-                    {% if current_user.main_character == character %}
-                        <tr class="internal main">
-                    {% else %}
-                        <tr class="internal">
-                    {% end %}
-                {% else %}
-                    <tr>
-                {% end %}
-                    <td><img src="https://image.eveonline.com/Character/{{ character.character_id }}_50.jpg"></td>
-                    <td>{{ character.character_name }}</td>
-                    <td>{{ character.corporation.name }}</td>
-                    {% if character.alliance_name %}
-                        <td>{{ character.alliance_name }}</td>
-                    {% else %}
-                        <td>-</td>
-                    {% end %}
-                </tr>
-            {% end %}
-            </tbody>
-        </table>
-        {% end %}
-    </div>
-    <div class="col-sm-12 col-md-5 col-lg-4">
         <h2>{{ _('CHARACTERS_CHARACTERS_TITLE') }}</h2>
         {% raw _('CHARACTERS_CHARACTERS_INTRO') %}</p>
+    </div>
+    <div class="col-sm-12 col-md-5 col-lg-4">
         <h3>{{ _('CHARACTERS_CHARACTERS_MAIN_TITLE') }}</h3>
         <form method="POST" action="/characters/select_main">
             <input type="hidden" name="_xsrf" value="{{ handler.xsrf_token }}">
@@ -69,6 +33,69 @@
                 <button type="submit">Set</button>
             </p>
         </form>
+    </div>
+</div>
+
+<div class="row characters_section">
+    <div class="col-sm-12">
+        {% if not len(current_user.characters) %}
+        <p class="alert alert-warning">{{ _('CHARACTERS_CHARACTERS_NO_CHARACTERS') }}</p>
+        {% else %}
+        <table class="table">
+            <thead class="thead-inverse">
+                <tr>
+                    <th></th>
+                    <th>Character</th>
+                    <th>Corporation/Alliance</th>
+                    <th>Location</th>
+                    <th>Ship</th>
+                    <th>SP</th>
+                </tr>
+            </thead>
+            <tbody>
+            {% for character in current_user.characters %}
+                {% if character.is_internal %}
+                    {% if current_user.main_character == character %}
+                        <tr class="internal main">
+                    {% else %}
+                        <tr class="internal">
+                    {% end %}
+                {% else %}
+                    <tr>
+                {% end %}
+                    <td><img src="https://image.eveonline.com/Character/{{ character.character_id }}_50.jpg"></td>
+                    <td>{{ character.character_name }}</td>
+                    <td>
+                        {{ character.corporation.name }}
+                        {% if character.alliance_name %}
+                            ({{ character.alliance_name }})
+                        {% end %}
+                    <td>
+                        {% if character.last_location %}
+                            {{ character.last_location.system.eve_name }}
+                        {% else %}
+                            <span class="pending">{{ _('PENDING') }}</span>
+                        {% end %}
+                    </td>
+                    <td>
+                        {% if character.last_ship %}
+                            {{ character.last_ship.eve_type.eve_name }}
+                        {% else %}
+                            <span class="pending">{{ _('PENDING') }}</span>
+                        {% end %}
+                    </td>
+                    <td>
+                        {% if character.sp %}
+                            {{ character.sp / 1000000 }}M
+                        {% else %}
+                            <span class="pending">{{ _('PENDING') }}</span>
+                        {% end %}
+                    </td>
+                </tr>
+            {% end %}
+            </tbody>
+        </table>
+        {% end %}
     </div>
 </div>
 
