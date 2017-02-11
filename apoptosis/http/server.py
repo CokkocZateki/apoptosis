@@ -190,7 +190,9 @@ def main():
     app = make_app()
     app.listen(config.http_port)
 
-    queue_user.setup()
+    start_queues = False
+    if start_queues:
+        queue_user.setup()
 
     tornado.locale.load_translations(config.tornado_translations)
     tornado.ioloop.IOLoop.current().start()
