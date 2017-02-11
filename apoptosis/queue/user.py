@@ -171,7 +171,6 @@ def refresh_character_skills(character_id, recurring=14400):
             eveskill = EVESkillModel.from_id(skill_id)
 
             session.add(eveskill)
-            session.commit()
 
             skill_level = skill["current_skill_level"]
             skill_points = skill["skillpoints_in_skill"]
@@ -190,7 +189,8 @@ def refresh_character_skills(character_id, recurring=14400):
             characterskill.points = skill_points
 
             session.add(characterskill)
-            session.commit()
+
+        session.commit()
 
     if recurring:
         refresh_character_corporation.apply_async(args=(character_id, recurring), countdown=recurring)
