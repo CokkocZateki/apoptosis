@@ -33,7 +33,11 @@ from apoptosis.http.pages import (
     AdminPage,
     AdminGroupsPage,
     AdminGroupsCreatePage,
+    AdminGroupsManagePage,
+    AdminMembershipAllowPage,
+    AdminMembershipDenyPage,
     AdminUsersPage,
+    AdminCharactersPage,
     AdminCharactersPage,
 )
 
@@ -140,6 +144,18 @@ def make_app():
             (
                 r"/admin/groups/create",
                 AdminGroupsCreatePage 
+            ),
+            (
+                r"/admin/groups/manage",
+                AdminGroupsManagePage 
+            ),
+            (
+                r"/admin/groups/membership/allow",
+                AdminMembershipAllowPage
+            ),
+            (
+                r"/admin/groups/membership/deny",
+                AdminMembershipDenyPage
             ),
             (
                 r"/admin/users",

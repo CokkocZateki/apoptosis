@@ -30,6 +30,13 @@ session = scoped_session(sessionmaker(autocommit=False,
                                       autoflush=False,
                                       bind=engine))
 
+# XXX TODO MOVE TO CONFIG
+GROUP_MAP = {
+    "directors": "directors",
+    "specops": "specops",
+    "hr": "hr"
+}
+
 
 class Base(object):
     @declared_attr
@@ -334,6 +341,9 @@ class GroupModel(Base):
 
         return False
 
+    def pending(self):
+        return [membership for membership in self.memberships if membership.pending]
+
     def __repr__(self):
         return "<GroupModel(id={}) {}>".format(self.id, self.name)
 
@@ -365,7 +375,7 @@ class SlackIdentityModel(Base):
 
     def __init__(self, email):
         self.email = email
-        self.verification_code = hashlib.sha256(os.urandom(4)).hexdigest()
+        self.verification_code = hashlib.sha256(os.urandom(4)).hexdigest()[:10].upper()
 
     def verify(self):
         if slack.verify_identity(self.email):

@@ -19,7 +19,7 @@
             {% end %}
             </p>
 
-            <a class="navbar-brand" href="/">HRDKX Auth</a>
+            <a class="navbar-brand" href="/"><img src="/static/img/logo.png" id="logo" width="25" height="25"></a>
 
             <ul class="nav navbar-nav">
 
@@ -30,7 +30,7 @@
 
                     {% if current_user.is_internal %}
                         <li class="nav-item"><a class="nav-link" href="/groups">{{ _('GROUPS') }}</a></li>
-                        <li class="nav-item"><a class="nav-link" href="/ping">{{ _('PING') }}</a></li>
+                        <!--<li class="nav-item"><a class="nav-link" href="/ping">{{ _('PING') }}</a></li>-->
                     {% end %}
 
                     {% if current_user.is_hr %}

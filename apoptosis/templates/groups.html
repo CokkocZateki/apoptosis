@@ -23,6 +23,7 @@
                     <button type="submit">{{ _('GROUP_LEAVE') }}</button>
                 </form>
                 <p>{{ group.description }}</p>
+                <p><em>This group has {{ len(group.members) }} members.</em></p>
             {% end %}
         {% end %}
     </div>
@@ -36,7 +37,8 @@
                 <form method="POST" action="/groups/leave">
                     <input type="hidden" name="_xsrf" value="{{ handler.xsrf_token }}">
                     <input type="hidden" name="group_id" value="{{ group.id }}">
-                    <button type="submit">{{ _('GROUP_LEAVE') }}</button>
+                    <button type="submit">{{ _('GROUP_CANCEL') }}</button>
+                    <strong>{{ _('PENDING_APPROVAL') }}</strong>
                 </form>
                 {% else %}
                 <form method="POST" action="/groups/join">
@@ -44,15 +46,13 @@
                     <input type="hidden" name="group_id" value="{{ group.id }}">
                     {% if group.requires_approval %}
                         <button type="submit">{{ _('GROUP_APPLY_TO_JOIN') }}</button>
+                        {{ _('GROUP_REQUIRES_APPROVAL') }}
                     {% else %}
                         <button type="submit">{{ _('GROUP_JOIN') }}</button>
                     {% end %}
                 </form>
                 {% end %}
                 <p>{{ group.description }}</p>
-                {% if group.has_pending(current_user) %}
-                    <strong>PENDING</strong>
-                {% end %}
             {% end %}
         {% end %}
     </div>

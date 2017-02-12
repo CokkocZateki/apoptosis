@@ -12,10 +12,11 @@
 <div class="row">
 	<div class="col-sm-3">
 		<h2>{{ _('ADMIN_PENDING') }}</h2>
+        <p><strong>{{ glance_membership }}</strong> <a href="/admin/groups">group memberships</a> are pending.</p>
 	</div>
 	<div class="col-sm-3">
 		<h2>{{ _('ADMIN_GLANCE') }}</h2>
-        <p>There are <strong>{{ glance_total }}</strong> characters registered (<strong>{{ glance_internal}}</strong> internal). Of those <strong>0</strong> are no longer valid.
+        <p>There are <strong>{{ glance_total }}</strong> characters registered (<strong>{{ glance_internal}}</strong> internal) to <strong>{{ glance_user }}</strong> <a href="/admin/users">users</a>.
 	</div>
 	<div class="col-sm-3">
 		<h2>{{ _('ADMIN_IDLE') }}</h2>

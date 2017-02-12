@@ -43,6 +43,10 @@ input[type="text"], input[type="password"] {
 	width: 250px;
 }
 
+form.inline {
+    display: inline-block;
+}
+
 form p {
 	padding-bottom: 15px;
 }

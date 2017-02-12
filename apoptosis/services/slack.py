@@ -78,24 +78,40 @@ async def group_remove(group_slug):
 async def group_members(group_slug):
     slack_id = await group_slug_to_id(group_slug)
     response = await slack_request("groups.info", channel=slack_id)
-    return response["group"]["members"]
+    return set(response["group"]["members"])
 
-async def group_upkeep(group_slug, member_emails):
+async def group_upkeep(group):
     """See if any members in the group are not allowed to be in this group,
        this function gets called with all allowed members."""
-    channel_id = await group_slug_to_id(group_slug)
 
-    wanted = set(user_email_to_id(member_email) for member_email in member_emails)
-    current = set(member for member in group_members(group_slug) if member != "U1YTLNYDC")  # XXX
+    slack_channel_id = await group_slug_to_id(group.slug)
 
-    to_invite = wanted - current
-    to_kick = current - wanted
+    slack_channel_current_members = await group_members(group.slug)
+    slack_channel_wanted_members = set()
 
-    for member in to_invite:
-        await group_invite(group_slug, member)
+    # Get all members in this group, look up their slack ID (if any)
+    for member in group.members:
+        for identity in member.slack_identities:
+            print(identity.email)
+            slack_member = await user_email_to_id(identity.email)
+            print(slack_member)
+            if slack_member:
+                slack_channel_wanted_members.add(slack_member)
 
-    for member in to_kick:
-        await group_kick(group_slug, member)
+    slack_to_invite = slack_channel_wanted_members - slack_channel_current_members
+    slack_to_kick = slack_channel_current_members - slack_channel_wanted_members
+
+    print(group.slug)
+    print("invite", len(slack_to_invite))
+    print("kick", len(slack_to_kick))
+
+    return
+
+    for member in slack_to_invite:
+        await group_invite(group.slug, member)
+
+    for member in slack_to_kick:
+        await group_kick(group.slug, member)
 
     return True
 
@@ -113,7 +129,6 @@ async def group_unarchive(group_slug):
     await slack_request("groups.unarchive", channel=channel_id)
     svc_log.warn("unarchived channel {}".format(group_slug))
 
-#@cached(86400)
 async def group_slug_to_id(group_slug):
     groups = await slack_request("groups.list")
     groups = groups["groups"]
@@ -122,8 +137,7 @@ async def group_slug_to_id(group_slug):
         if group["name"] == group_slug:
             return group["id"]
     else:
-        raise ValueError("No Slack group found")
-
+        raise ValueError("No Slack group found for", group_slug)
 
 async def groups_upkeep(group_slugs):
     """Iterate through the group slugs, archiving channels that do not exist in the list and
@@ -155,7 +169,6 @@ async def user_email_to_id(user_email):
         if user["profile"].get("email", None) == user_email:
             return user["id"]
 
-
 def user_info(user_email):
     user_id = user_email_to_id(user_email)
     return slack_request("users.info", user=user_id)["user"]
@@ -172,8 +185,7 @@ async def private_message(user_email, message):
     try:
         channel_id = channel_id["channel"]["id"]
     except:
-        print("XXXXXX", channel_id)
-        raise
+        return False
 
     return await slack_request("chat.postMessage", channel=channel_id, text=message, username="apoptosis", parse="full")
 

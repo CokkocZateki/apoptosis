@@ -25,21 +25,19 @@
                 <tr>
                     <th>Group</th>
                     <th>Members</th>
-                    <th>Actions</th>
                 </tr>
             </thead>
             <tbody>
             {% for group in groups %}
                 <tr>
                     <td>
-                        {{ group.name }}
+                        <a href="/admin/groups/manage?group_id={{ group.id }}">{{ group.name }}</a>
                     </td>
                     <td>
-                        {{ len(group.memberships) }}
-                    </td>
-                    <td>
-                        <a href="/admin/groups/detail?character_id={{ character.id }}">Details</a>
-                    </td>
+                        {{ len([membership for membership in group.memberships if not membership.pending]) }}
+                        {% if group.requires_approval and len([membership for membership in group.memberships if membership.pending]) %}
+                            <strong>({{ len([membership for membership in group.memberships if membership.pending]) }})</strong>
+                        {% end %}
                 </tr>
             {% end %}
             </tbody>

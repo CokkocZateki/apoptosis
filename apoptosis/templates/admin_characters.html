@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 
-{% block title %}Character Administration{% end %}
+{% block title %}admin_characters{% end %}
 
 {% block body %}
 <div class="row characters_section">
@@ -15,27 +15,48 @@
         <table class="table">
             <thead class="thead-inverse">
                 <tr>
-                    <th>Character</th>
-                    <th>Current</th>
-                    <th>Actions</th>
+                    <th></th>
+                    <th>Name</th>
+                    <th>Affiliation</th>
+                    <th>Location</th>
+                    <th>Ship</th>
+                    <th>SP</th>
                 </tr>
             </thead>
             <tbody>
             {% for character in characters %}
                 <tr>
+                    <td><img src="https://image.eveonline.com/Character/{{ character.character_id }}_50.jpg"></td>
                     <td>
-                        {{ character.character_name }}
+                        <a href="/admin/characters/detail?character_id={{ character.id }}">{{ character.character_name }}</a>
                     </td>
                     <td>
-                        {% if character.is_online %}
-                            online ({{ character.last_location.system }})
+                        {{ character.corporation.name }}
+                        {% if character.alliance_name %}
+                            ({{ character.alliance_name }})
+                        {% end %}
+                    <td>
+                        {% if character.last_location %}
+                            {{ character.last_location.system.eve_name }}
                         {% else %}
-                            offline ({{ character.last_location }})
+                            <span class="pending">{{ _('PENDING') }}</span>
                         {% end %}
                     </td>
                     <td>
-                        <a href="/admin/characters/detail?character_id={{ character.id }}">Details</a>
+                        {% if character.last_ship %}
+                            {{ character.last_ship.eve_type.eve_name }}
+                        {% else %}
+                            <span class="pending">{{ _('PENDING') }}</span>
+                        {% end %}
                     </td>
+                    <td>
+                        {% if character.sp %}
+                            {{ character.sp / 1000000 }}M
+                        {% else %}
+                            <span class="pending">{{ _('PENDING') }}</span>
+                        {% end %}
+                    </td>
+
                 </tr>
             {% end %}
             </tbody>

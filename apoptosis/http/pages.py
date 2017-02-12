@@ -253,8 +253,7 @@ class LoginCreatedPage(AuthPage):
 class LogoutPage(AuthPage):
     @login_required
     async def post(self):
-        self.set_current_user(None)
-
+        self.clear_cookie("user_id")
         return self.redirect("/logout/success")
 
 
@@ -356,7 +355,11 @@ class ServicesSendVerificationSlackIdentityPage(AuthPage):
     async def post(self):
         slackidentity = self.model_by_id(SlackIdentityModel, "slackidentity_id")
 
-        await slack.verify(slackidentity)
+        value = await slack.verify(slackidentity)
+
+        if value is False:
+            self.flash_error(self.locale.translate("SERVICES_SEND_SLACK_IDENTITY_FAILURE_ALERT"))
+            return self.redirect("/services?slackidentity_id={}".format(slackidentity.id))
 
         sec_log.info("slackidentity {} for {} sent verification".format(slackidentity, slackidentity.user))
 
@@ -378,10 +381,12 @@ class ServicesVerifyVerificationSlackIdentityPage(AuthPage):
             session.commit()
 
             sec_log.info("slackidentity {} for {} verified".format(slackidentity, slackidentity.user))
+            self.flash_success(self.locale.translate("SERVICES_VERIFY_SLACK_IDENTITY_SUCCESS_ALERT"))
 
-            return self.redirect("/services/verify_slack_verification/success?slackidentity_id={}".format(slackidentity.id))
+            return self.redirect("/services?slackidentity_id={}".format(slackidentity.id))
         else:
-            return self.redirect("/services/verify_slack_verification/failure?slackidentity_id={}".format(slackidentity.id))
+            self.flash_error(self.locale.translate("SERVICES_VERIFY_SLACK_IDENTITY_FAILURE_ALERT"))
+            return self.redirect("/services?slackidentity_id={}".format(slackidentity.id))
 
 
 class ServicesVerifySlackIdentitySuccessPage(AuthPage):
@@ -421,8 +426,8 @@ class GroupsJoinPage(AuthPage):
 
         sec_log.info("user {} joined group {}".format(membership.user, membership.group))
 
-        # XXX Update the entire group
-        slack.group_upkeep(group.slug, [member.slack_identities[0].email for member in group.members if len(member.slack_identities)])
+        # XXX move to task
+        #await slack.group_upkeep(group)
 
         return self.redirect("/groups/join/success?membership_id={}".format(membership.id))
 
@@ -458,7 +463,8 @@ class GroupsLeavePage(AuthPage):
 
         sec_log.info("user {} left group {}".format(membership.user, membership.group))
 
-        slack.group_upkeep(group.slug, [member.slack_identities[0].email for member in group.members if len(member.slack_identities)])
+        # XXX move to task
+        #await slack.group_upkeep(group)
 
         return self.redirect("/groups/leave/success?group_id={}".format(group.id))
 
@@ -549,15 +555,21 @@ class AdminPage(AuthPage):
     @internal_required
     @admin_required
     async def get(self):
-        characters = [character for character in session.query(CharacterModel).all()]
+        characters = list(session.query(CharacterModel).all())
+        users = list(session.query(UserModel).all())
+        memberships = list(session.query(MembershipModel).all())
 
         glance_total = len(characters)
         glance_internal = len([character for character in characters if character.is_internal])
+        glance_user = len([character for character in characters if character.is_internal])
+        glance_membership = len([membership for membership in memberships if membership.pending])
 
         return self.render(
             "admin.html",
             glance_total=glance_total,
-            glance_internal=glance_internal
+            glance_internal=glance_internal,
+            glance_user=glance_user,
+            glance_membership=glance_membership
         )
 
 class AdminGroupsPage(AuthPage):
@@ -569,6 +581,49 @@ class AdminGroupsPage(AuthPage):
         groups = session.query(GroupModel).all()
 
         return self.render("admin_groups.html", groups=groups)
+
+class AdminGroupsManagePage(AuthPage):
+
+    @login_required
+    @internal_required
+    @admin_required
+    async def get(self):
+        group = self.model_by_id(GroupModel, "group_id")
+
+        self.render("admin_groups_manage.html", group=group)
+
+
+class AdminMembershipAllowPage(AuthPage):
+
+    @login_required
+    @internal_required
+    @admin_required
+    async def post(self):
+        membership = self.model_by_id(MembershipModel, "membership_id")
+        membership.pending = 0
+
+        session.add(membership)
+        session.commit()
+
+        self.flash_success(self.locale.translate("MEMBERSHIP_ALLOW_SUCCESS_ALERT"))
+        self.redirect("/admin/groups/manage?group_id={}".format(membership.group.id))
+
+
+class AdminMembershipDenyPage(AuthPage):
+
+    @login_required
+    @internal_required
+    @admin_required
+    async def post(self):
+        membership = self.model_by_id(MembershipModel, "membership_id")
+
+        group_id = membership.group.id
+
+        session.delete(membership)
+        session.commit()
+
+        self.flash_success(self.locale.translate("MEMBERSHIP_DENY_SUCCESS_ALERT"))
+        self.redirect("/admin/groups/manage?group_id={}".format(group_id))
 
 
 class AdminGroupsCreatePage(AuthPage):
@@ -611,7 +666,7 @@ class AdminCharactersPage(AuthPage):
     @internal_required
     @admin_required
     async def get(self):
-        characters = session.query(CharacterModel).all()
+        characters = session.query(CharacterModel).order_by(CharacterModel.character_name).all()
 
         return self.render("admin_characters.html", characters=characters)
 

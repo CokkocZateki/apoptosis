@@ -52,7 +52,7 @@ class AuthPage(tornado.web.RequestHandler):
             raise tornado.web.HTTPError(404)
 
         if hasattr(instance, "user"):
-            if not instance.user == self.current_user:
+            if not instance.user == self.current_user and not self.current_user.is_admin:
                 raise tornado.web.HTTPError(403)
 
         return instance
@@ -101,7 +101,7 @@ class AuthPage(tornado.web.RequestHandler):
         self._flash("success", message)
 
     def flash_error(self, message):
-        self._flash("error", message)
+        self._flash("danger", message)
 
     def flash_messages(self):
         if not self.get_secure_cookie("flashes"):

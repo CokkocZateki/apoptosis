@@ -1,0 +1,75 @@
+{% extends "base.html" %}
+
+{% block title %}Group Administration{% end %}
+
+{% block body %}
+<div class="row characters_section">
+    <div class="col-sm-12">
+        <h1>{{ _('ADMIN_GROUPS_MANAGE_TITLE') }}: {{ group.name }}</h1>
+        <p>{{ _('ADMIN_GROUPS_MANAGE_INTRO') }}</h1>
+    </div>
+</div>
+{% if len([membership for membership in group.memberships if membership.pending]) %}
+<div class="row characters_section">
+    <div class="col-sm-12">
+        <h2>Pending Members</h2>
+        <table class="table">
+            <thead class="thead-inverse">
+                <tr>
+                    <th>Character</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+            {% for membership in [membership for membership in group.memberships if membership.pending] %}
+                <tr>
+                    <td>
+                        {{ membership.user.main_character.character_name }}
+                    </td>
+                    <td>
+                        <form class="inline" method="POST" action="/admin/groups/membership/allow">
+                            <input type="hidden" name="_xsrf" value="{{ handler.xsrf_token }}">
+                            <input type="hidden" name="membership_id" value="{{ membership.id }}">
+                            <button type="submit">{{ _('ALLOW') }}</button>
+                        </form>
+                        <form class="inline" method="POST" action="/admin/groups/membership/deny">
+                            <input type="hidden" name="_xsrf" value="{{ handler.xsrf_token }}">
+                            <input type="hidden" name="membership_id" value="{{ membership.id }}">
+                            <button type="submit">{{ _('DENY') }}</button>
+                        </form>
+                    </td>
+                </tr>
+            {% end %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% end %}
+<div class="row characters_section">
+    <div class="col-sm-12">
+        <h2>Current Members</h2>
+        <table class="table">
+            <thead class="thead-inverse">
+                <tr>
+                    <th>Character</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for membership in [membership for membership in group.memberships if not membership.pending] %}
+                    <tr>
+                        <td>{{ membership.user.main_character.character_name }}</td>
+                        <td>
+                            <form class="inline" method="POST" action="/admin/groups/membership/deny">
+                                <input type="hidden" name="_xsrf" value="{{ handler.xsrf_token }}">
+                                <input type="hidden" name="membership_id" value="{{ membership.id }}">
+                                <button type="submit">{{ _('REMOVE') }}</button>
+                            </form>
+                        </td>
+                    </tr>
+                {% end %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% end %}
