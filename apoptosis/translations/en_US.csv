@@ -29,7 +29,7 @@
 "CHARACTERS_XML_APIS_TITLE","XML APIs"
 "CHARACTERS_XML_APIS_INTRO","Adding XML APIs is the easiest way to add multiple characters at once. You can add API keys of any mask here, for an account or a character."
 "CHARACTERS_CHARACTERS_TITLE","Characters"
-"CHARACTERS_CHARACTERS_INTRO","<p>These are the characters you have valid API keys for in the system. As long as one of the characters on this list is in Hard Knocks Inc. you will have access to services.</p><p>Your main character is the character that will be used as your identity on services, it also affects your login name for Jabber and Forums. If you change it you will get a new account on those and you won't be able to sign into your old one until you change your main again. Think before selecting your main as it is the name everyone will know you by.</p>"
+"CHARACTERS_CHARACTERS_INTRO","<p>These are the characters you have valid API keys for in the system. As long as one of the characters on this list is in Hard Knocks Inc. you will have access to services.</p><p>Your main character is the character that will be used as your identity on services, it also affects your login name for the forums and other linked services. If you change it you will get a new account on those and you won't be able to sign into your old one until you change your main again. Think before selecting your main as it is the name everyone will know you by.</p>"
 "CHARACTERS_XML_APIS_KEY_ID_LABEL","Key ID"
 "CHARACTERS_XML_APIS_KEY_ID_PLACEHOLDER","123456890"
 "CHARACTERS_XML_APIS_KEY_ID_HELP","."
