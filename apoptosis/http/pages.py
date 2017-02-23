@@ -54,6 +54,23 @@ def admin_required(func):
         await func(self)
     return inner
 
+def special_required(func):
+    async def inner(self, *args, **kwargs):
+        self.requires_special()
+        await func(self)
+    return inner
+
+def fc_required(func):
+    async def inner(self, *args, **kwargs):
+        self.requires_fc()
+        await func(self)
+    return inner
+
+def hr_required(func):
+    async def inner(self, *args, **kwargs):
+        self.requires_hr()
+        await func(self)
+    return inner
 
 class LoginPage(AuthPage):
     async def get(self):
@@ -153,6 +170,10 @@ class LoginCallbackPage(AuthPage):
 
         if character: # XXX add new scopes
             if character.user == self.current_user:
+                character.access_token = access_token
+                character.refresh_token = refresh_token
+                character.account_hash = account_hash
+
                 # update scopes
                 a = 1
             else:
@@ -330,7 +351,7 @@ class ServicesAddSlackIdentityPage(AuthPage):
         if not slack_id:
             raise tornado.web.HTTPError(400)
 
-        slackidentity = SlackIdentityModel(slack_id)
+        slackidentity = SlackIdentityModel(slack_id.lower())
         slackidentity.user = self.current_user
 
         session.add(slackidentity)
@@ -419,7 +440,10 @@ class GroupsJoinPage(AuthPage):
         membership.group = group
 
         if group.requires_approval:
+            await slack.group_message(group.slug, "New pending member: {}".format(self.current_user.main_character.character_name))
             membership.pending = True
+        else:
+            await slack.group_message(group.slug, "New member: {}".format(self.current_user.main_character.character_name))
 
         session.add(membership)
         session.commit()
@@ -454,6 +478,8 @@ class GroupsLeavePage(AuthPage):
 
         for membership in group.memberships:
             if membership.user == self.current_user:
+                await slack.group_message(group.slug, "Member left: {}".format(self.current_user.main_character.character_name))
+
                 session.delete(membership)
                 session.commit()
 
@@ -549,6 +575,39 @@ class PingSendGroupSuccessPage(AuthPage):
         return self.redirect("/groups")
 
 
+class SpecOpsPage(AuthPage):
+
+    @login_required
+    @internal_required
+    @special_required
+    async def get(self):
+        return self.render(
+            "specops.html"
+        )
+
+
+class HRPage(AuthPage):
+
+    @login_required
+    @internal_required
+    @hr_required
+    async def get(self):
+        return self.render(
+            "hr.html"
+        )
+
+
+class FCPage(AuthPage):
+
+    @login_required
+    @internal_required
+    @hr_required
+    async def get(self):
+        return self.render(
+            "fc.html"
+        )
+
+
 class AdminPage(AuthPage):
 
     @login_required
@@ -561,7 +620,7 @@ class AdminPage(AuthPage):
 
         glance_total = len(characters)
         glance_internal = len([character for character in characters if character.is_internal])
-        glance_user = len([character for character in characters if character.is_internal])
+        glance_user = len([user for user in users if user.is_internal])
         glance_membership = len([membership for membership in memberships if membership.pending])
 
         return self.render(
@@ -591,6 +650,19 @@ class AdminGroupsManagePage(AuthPage):
         group = self.model_by_id(GroupModel, "group_id")
 
         self.render("admin_groups_manage.html", group=group)
+
+class AdminGroupsSlackUpkeepPage(AuthPage):
+
+    @login_required
+    @internal_required
+    @admin_required
+    async def post(self):
+        group = self.model_by_id(GroupModel, "group_id")
+
+        upkeep = await slack.group_upkeep(group)
+
+        self.flash_success(self.locale.translate("GROUP_SLACK_UPKEEP_SUCCESS_ALERT"))
+        self.redirect("/admin/groups/manage?group_id={}".format(group.id))
 
 
 class AdminMembershipAllowPage(AuthPage):
@@ -656,8 +728,21 @@ class AdminUsersPage(AuthPage):
     @admin_required
     async def get(self):
         users = session.query(UserModel).all()
+        users = sorted(users, key=lambda x: x.sp)
+
 
         return self.render("admin_users.html", users=users)
+
+
+class AdminUsersDetailPage(AuthPage):
+
+    @login_required
+    @internal_required
+    @admin_required
+    async def get(self):
+        user = self.model_by_id(UserModel, "user_id")
+
+        return self.render("admin_users_detail.html", user=user)
 
 
 class AdminCharactersPage(AuthPage):
@@ -669,6 +754,18 @@ class AdminCharactersPage(AuthPage):
         characters = session.query(CharacterModel).order_by(CharacterModel.character_name).all()
 
         return self.render("admin_characters.html", characters=characters)
+
+
+class AdminCharactersDetailPage(AuthPage):
+
+    @login_required
+    @internal_required
+    @admin_required
+    async def get(self):
+        character = self.model_by_id(CharacterModel, "character_id")
+
+        return self.render("admin_characters_detail.html", character=character)
+
 
 class AdminGroupsPage(AuthPage):
 

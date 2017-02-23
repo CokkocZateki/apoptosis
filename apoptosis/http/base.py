@@ -32,6 +32,10 @@ class AuthPage(tornado.web.RequestHandler):
         if not self.current_user.is_hr and not self.current_user.is_admin:
             raise tornado.web.HTTPError(403)
 
+    def requires_fc(self):
+        if not self.current_user.is_fc and not self.current_user.is_admin:
+            raise tornado.web.HTTPError(403)
+
     def requires_special(self):
         if not self.current_user.is_special and not self.current_user.is_admin:
             raise tornado.web.HTTPError(403)

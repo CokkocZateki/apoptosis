@@ -1,7 +1,5 @@
 from celery import Celery
 
-import apoptosis.queue.user
-
 celery_queue = Celery(
     "apoptosis",
     broker="redis://localhost",
@@ -9,4 +7,7 @@ celery_queue = Celery(
 )
 
 if __name__ == "__main__":
+    import apoptosis.queue.user
+    import apoptosis.queue.group
+
     celery_queue.start()

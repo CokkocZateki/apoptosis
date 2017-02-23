@@ -7,6 +7,12 @@
     <div class="col-sm-12">
         <h1>{{ _('ADMIN_GROUPS_MANAGE_TITLE') }}: {{ group.name }}</h1>
         <p>{{ _('ADMIN_GROUPS_MANAGE_INTRO') }}</h1>
+        <form class="inline" method="POST" action="/admin/groups/slack_upkeep">
+            <input type="hidden" name="_xsrf" value="{{ handler.xsrf_token }}">
+            <input type="hidden" name="group_id" value="{{ group.id }}">
+            <button type="submit">{{ _('SLACK_UPKEEP') }}</button>
+        </form>
+        </p>
     </div>
 </div>
 {% if len([membership for membership in group.memberships if membership.pending]) %}
@@ -25,6 +31,9 @@
                 <tr>
                     <td>
                         {{ membership.user.main_character.character_name }}
+                        {% if not len(membership.user.slack_identities) %}
+                            <small><strong>{{ _('NO_SLACK_IDENTITY') }}</strong></small>
+                        {% end %}
                     </td>
                     <td>
                         <form class="inline" method="POST" action="/admin/groups/membership/allow">
@@ -58,7 +67,12 @@
             <tbody>
                 {% for membership in [membership for membership in group.memberships if not membership.pending] %}
                     <tr>
-                        <td>{{ membership.user.main_character.character_name }}</td>
+                        <td>
+                            {{ membership.user.main_character.character_name }}
+                            {% if not len(membership.user.slack_identities) %}
+                                <small><strong>{{ _('NO_SLACK_IDENTITY') }}</strong></small>
+                            {% end %}
+                        </td>
                         <td>
                             <form class="inline" method="POST" action="/admin/groups/membership/deny">
                                 <input type="hidden" name="_xsrf" value="{{ handler.xsrf_token }}">

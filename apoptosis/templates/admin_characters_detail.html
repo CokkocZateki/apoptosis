@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+
+{% block title %}admin_characters{% end %}
+
+{% block body %}
+<div class="row characters_section">
+    <div class="col-sm-12">
+        <h1>{{ _('ADMIN_CHARACTERS_DETAIL_TITLE') }}</h1>
+        <p>{{ _('ADMIN_CHARACTERS_DETAIL_INTRO') }}</h1>
+    </div>
+</div>
+<div class="row characters_section">
+    <div class="col-md-4 col-sm-12">
+        <h2>{{ character.character_name }}</h2>
+        <img src="https://image.eveonline.com/Character/{{ character.character_id }}_200.jpg"></td>
+    </div>
+</div>
+{% for alt in character.user.characters %}
+<div class="row characters_section">
+    <div class="col-sm-12">
+            <h3>{{ alt.character_name }}</h3>
+            <img src="https://image.eveonline.com/Character/{{ alt.character_id }}_50.jpg"></td>
+    </div>
+</div>
+{% end %}
+{% end %}

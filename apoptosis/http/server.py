@@ -34,15 +34,23 @@ from apoptosis.http.pages import (
     AdminGroupsPage,
     AdminGroupsCreatePage,
     AdminGroupsManagePage,
+    AdminGroupsSlackUpkeepPage,
     AdminMembershipAllowPage,
     AdminMembershipDenyPage,
     AdminUsersPage,
+    AdminUsersDetailPage,
     AdminCharactersPage,
-    AdminCharactersPage,
+    AdminCharactersDetailPage,
+    SpecOpsPage,
+    HRPage,
+    FCPage,
 )
 
 from apoptosis import config
+
 from apoptosis.queue import user as queue_user
+from apoptosis.queue import group as queue_group
+
 from apoptosis.log import app_log
 
 
@@ -134,6 +142,18 @@ def make_app():
                 PingSendGroupSuccessPage
             ),
             (
+                r"/specops",
+                SpecOpsPage
+            ),
+            (
+                r"/hr",
+                HRPage
+            ),
+            (
+                r"/fc",
+                FCPage
+            ),
+            (
                 r"/admin",
                 AdminPage 
             ),
@@ -150,6 +170,10 @@ def make_app():
                 AdminGroupsManagePage 
             ),
             (
+                r"/admin/groups/slack_upkeep",
+                AdminGroupsSlackUpkeepPage
+            ),
+            (
                 r"/admin/groups/membership/allow",
                 AdminMembershipAllowPage
             ),
@@ -162,8 +186,16 @@ def make_app():
                 AdminUsersPage 
             ),
             (
+                r"/admin/users/detail",
+                AdminUsersDetailPage 
+            ),
+            (
                 r"/admin/characters",
                 AdminCharactersPage 
+            ),
+            (
+                r"/admin/characters/detail",
+                AdminCharactersDetailPage 
             ),
             (
                 r"/login",
@@ -206,9 +238,12 @@ def main():
     app = make_app()
     app.listen(config.http_port)
 
-    start_queues = False
+    start_queues = True
     if start_queues:
+        queue_group.setup()
         queue_user.setup()
+    else:
+        queue_group.start_slack()
 
     tornado.locale.load_translations(config.tornado_translations)
     tornado.ioloop.IOLoop.current().start()

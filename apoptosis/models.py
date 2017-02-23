@@ -55,15 +55,33 @@ class UserModel(Base):
 
     is_admin = Column(Boolean)
 
-    is_special = Column(Boolean)  # XXX move to calculated property
-    is_hr = Column(Boolean)  # XXX move to calculated property
-
     @property
     def is_internal(self):
         # If any character on any active SSO or API token is in the
         # configured alliance or corp then this is an internal user
         # who has access to all features
         return any(c.is_internal for c in self.characters)
+
+    @property
+    def is_special(self):
+        if self.is_admin:
+            return True
+
+        return False
+
+    @property
+    def is_hr(self):
+        if self.is_admin:
+            return True
+
+        return False
+
+    @property
+    def is_fc(self):
+        if self.is_admin:
+            return True
+
+        return False
 
     @property
     def main_character(self):
@@ -78,6 +96,10 @@ class UserModel(Base):
     @property
     def last_login(self):
         return session.query(UserLoginModel).filter(UserLoginModel.user_id==self.id).order_by(UserLoginModel.pub_date.desc()).first()
+
+    @property
+    def sp(self):
+        return sum(character.sp for character in self.characters)
 
     def __repr__(self):
         return "<UserModel(id={}) {}>".format(self.id, self.main_character)
@@ -216,7 +238,11 @@ class CharacterModel(Base):
 
     @property
     def is_internal(self):
-        return self.corporation.name == "Hard Knocks Inc."  # XXX get from config
+        return self.corporation.name == "Hard Knocks Inc." and self.is_valid  # XXX get from config
+
+    @property
+    def is_valid(self):
+        return self.access_token is not None
 
     def __repr__(self):
         return "<CharacterModel(id={}) {}>".format(self.id, self.character_name)

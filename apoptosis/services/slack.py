@@ -7,6 +7,8 @@ except ImportError:
 
 import itertools
 
+import tornado.gen
+
 from tornado.httpclient import AsyncHTTPClient, HTTPRequest
 
 from apoptosis.log import app_log, sec_log, svc_log
@@ -14,19 +16,37 @@ from apoptosis.helpers import cached
 
 from apoptosis import config
 
+USER_EMAIL_TO_ID = {}
+
 
 async def slack_request(action, **params):
     slack_client = AsyncHTTPClient()
 
     params["token"] = config.slack_apitoken
-    params = urlencode(params)
 
-    url = "https://slack.com/api/{0}?{1}".format(action, params)
+    encoded_params = urlencode(params)
+
+    url = "https://slack.com/api/{0}?{1}".format(action, encoded_params)
 
     svc_log.info("requesting {}".format(url))
  
     request = HTTPRequest(url)
-    response = await slack_client.fetch(request)
+    try:
+        response = await slack_client.fetch(request)
+    except tornado.httpclient.HTTPError as e:
+        # XXX Wait for throttling
+        if e.code == 429:
+            retry_after = e.response.headers.get("Retry-After", None)
+
+            if retry_after is not None:
+                svc_log.warn("slack throttled for {}s".format(retry_after))
+
+                await tornado.gen.sleep(int(retry_after) + 1)
+
+                # Redo our call
+                response = await slack_client.fetch(request)
+        else:
+            raise
 
     return json.loads(response.body.decode("utf-8"))
 
@@ -39,7 +59,7 @@ async def group_message(group_slug, message):
 
 async def group_ping(group_name, message):
     """Send a message to a group prefixed to notify everyone."""
-    message = "@everyone " + message
+    message = "@channel " + message
     return await group_message(group_name, message)
 
 
@@ -87,25 +107,24 @@ async def group_upkeep(group):
     slack_channel_id = await group_slug_to_id(group.slug)
 
     slack_channel_current_members = await group_members(group.slug)
+    slack_channel_current_members = set(member for member in slack_channel_current_members if member != 'U1YTLNYDC')
     slack_channel_wanted_members = set()
 
     # Get all members in this group, look up their slack ID (if any)
     for member in group.members:
         for identity in member.slack_identities:
-            print(identity.email)
             slack_member = await user_email_to_id(identity.email)
-            print(slack_member)
             if slack_member:
                 slack_channel_wanted_members.add(slack_member)
 
     slack_to_invite = slack_channel_wanted_members - slack_channel_current_members
     slack_to_kick = slack_channel_current_members - slack_channel_wanted_members
 
-    print(group.slug)
-    print("invite", len(slack_to_invite))
-    print("kick", len(slack_to_kick))
+    svc_log.warn("running slack group upkeep for {} ({}), inviting {}, kicking {}".format(group.slug, len(slack_channel_current_members), len(slack_to_invite), len(slack_to_kick)))
 
-    return
+    if group.slug not in ('eft-warriors', 'atxv', 'tech', 'specops', 'intel-hk', 'intel-citadels', 'intel-capitals', 'intel-supers', 'roamers'):
+        print("yes")
+        return
 
     for member in slack_to_invite:
         await group_invite(group.slug, member)
@@ -160,14 +179,38 @@ async def groups_upkeep(group_slugs):
 
     return True
 
+async def user_id_to_email(user_id):
+    users = await slack_request("users.list")
+    users = users["members"]
+
+    for user in users:
+        if user["profile"].get("id", None) == user_id:
+            return user["email"]
+
 
 async def user_email_to_id(user_email):
+    if user_email in USER_EMAIL_TO_ID:
+        return USER_EMAIL_TO_ID[user_email]
+
     users = await slack_request("users.list")
     users = users["members"]
 
     for user in users:
         if user["profile"].get("email", None) == user_email:
+            USER_EMAIL_TO_ID[user_email] = user["id"]
             return user["id"]
+
+
+async def refresh_user_email_to_ids():
+    users = await slack_request("users.list")
+    users = users["members"]
+
+    for user in users:
+        user_email = user["profile"].get("email", None)
+
+        if user_email is not None:
+            USER_EMAIL_TO_ID[user_email] = user["id"]
+
 
 def user_info(user_email):
     user_id = user_email_to_id(user_email)
@@ -188,4 +231,3 @@ async def private_message(user_email, message):
         return False
 
     return await slack_request("chat.postMessage", channel=channel_id, text=message, username="apoptosis", parse="full")
-

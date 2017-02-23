@@ -54,14 +54,23 @@ def refresh_access_token(character):
         })
     )
 
-    response = client.fetch(request)
-    response = json.loads(response.body.decode("utf-8"))
+    try:
+        response = client.fetch(request)
+        response = json.loads(response.body.decode("utf-8"))
 
-    character.access_token = response["access_token"]
+        character.access_token = response["access_token"]
 
-    app_log.debug("got new access token for".format(character.character_name))
+        session.add(character)
+        session.commit()
 
-    session.add(character)
-    session.commit()
+        app_log.debug("got new access token for {}".format(character))
+    except tornado.httpclient.HTTPError:
+        app_log.info("failed retrieving new access token for {}".format(character))
 
-    return response["access_token"]
+        character.access_token = None
+        character.refresh_token = None
+
+        session.add(character)
+        session.commit()
+
+        raise Exception("")  # XXX proper type

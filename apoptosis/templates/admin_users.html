@@ -15,34 +15,37 @@
         <table class="table">
             <thead class="thead-inverse">
                 <tr>
+                    <th></th>
                     <th>Main</th>
                     <th>Alts</th>
+                    <th>SP</th>
                     <th>Groups</th>
                     <th>Last Login</th>
-                    <th>Actions</th>
                 </tr>
             </thead>
             <tbody>
             {% for user in users %}
                 <tr>
+                    <td><img src="https://image.eveonline.com/Character/{{ user.main_character.character_id }}_50.jpg"></td>
                     <td>
-                        {{ user.main_character.character_name }}
+                        <a href="/admin/users/detail?user_id={{ user.main_character.id }}">{{ user.main_character.character_name }}</a>
                     </td>
                     <td>
                         {% if len(user.characters) > 1 %}
                             {% for character in user.characters %}
                                 {% if character != user.main_character %}
-                                    {{ character.character_name }}
+                                    <a href="/admin/characters/detail?character_id={{ character.id }}">{{ character.character_name }}</a><br>
                                 {% end %}
                             {% end %}
                         {% else %}
                             <em>None.</em>
                         {% end %}
                     </td>
+                    <td>{{ user.sp }}</td>
                     <td>
                         {% if len(user.groups) %}
                             {% for group in user.groups %}
-                                {{ group.name }}
+                                <a href="/admin/groups/manage?group_id={{ group.id }}">{{ group.name }}</a><br>
                             {% end %}
                         {% else %}
                             <em>None.</em>
@@ -50,9 +53,6 @@
                     </td>
                     <td>
                         {{ user.last_login.pub_date }} (<a href="/admin/users/ip_address?address={{ user.last_login.ip_address }}">{{ user.last_login.ip_address }}</a>)
-                    </td>
-                    <td>
-                        <a href="/admin/users/detail?user_id={{ user.id }}">Details</a>
                     </td>
                 </tr>
             {% end %}

@@ -35,12 +35,23 @@
         </form>
     </div>
 </div>
-
+{% if not len(current_user.characters) %}
 <div class="row characters_section">
     <div class="col-sm-12">
-        {% if not len(current_user.characters) %}
         <p class="alert alert-warning">{{ _('CHARACTERS_CHARACTERS_NO_CHARACTERS') }}</p>
-        {% else %}
+    </div>
+</div>
+{% else %}
+
+{% set characters_internal = [character for character in current_user.characters if character.is_internal and character.is_valid] %}
+{% set characters_external = [character for character in current_user.characters if not character.is_internal and character.is_valid] %}
+{% set characters_invalid = [character for character in current_user.characters if not character.is_valid] %}
+
+{% if len(characters_invalid ) %}
+<div class="row characters_section">
+    <div class="col-sm-12">
+        <h2>{{ _('CHARACTERS_INVALID') }}</h2>
+        <p class="alert alert-danger">{{ _('CHARACTERS_INVALID_INTRO') }}</p>
         <table class="table">
             <thead class="thead-inverse">
                 <tr>
@@ -53,16 +64,8 @@
                 </tr>
             </thead>
             <tbody>
-            {% for character in current_user.characters %}
-                {% if character.is_internal %}
-                    {% if current_user.main_character == character %}
-                        <tr class="internal main">
-                    {% else %}
-                        <tr class="internal">
-                    {% end %}
-                {% else %}
-                    <tr>
-                {% end %}
+            {% for character in characters_invalid %}
+                <tr>
                     <td><img src="https://image.eveonline.com/Character/{{ character.character_id }}_50.jpg"></td>
                     <td>{{ character.character_name }}</td>
                     <td>
@@ -86,7 +89,7 @@
                     </td>
                     <td>
                         {% if character.sp %}
-                            {{ character.sp / 1000000 }}M
+                            {{ "%.1f" % (character.sp / 1000000) }}M
                         {% else %}
                             <span class="pending">{{ _('PENDING') }}</span>
                         {% end %}
@@ -95,9 +98,122 @@
             {% end %}
             </tbody>
         </table>
-        {% end %}
     </div>
 </div>
+{% end %}
+
+{% if len(characters_internal) %}
+<div class="row characters_section">
+    <div class="col-sm-12">
+        <h2>{{ _('CHARACTERS_INTERNAL') }}</h2>
+        <p>{{ _('CHARACTERS_INTERNAL_INTRO') }}</p>
+        <table class="table">
+            <thead class="thead-inverse">
+                <tr>
+                    <th></th>
+                    <th>Character</th>
+                    <th>Corporation/Alliance</th>
+                    <th>Location</th>
+                    <th>Ship</th>
+                    <th>SP</th>
+                </tr>
+            </thead>
+            <tbody>
+            {% for character in characters_internal %}
+                <tr>
+                    <td><img src="https://image.eveonline.com/Character/{{ character.character_id }}_50.jpg"></td>
+                    <td>{{ character.character_name }}</td>
+                    <td>
+                        {{ character.corporation.name }}
+                        {% if character.alliance_name %}
+                            ({{ character.alliance_name }})
+                        {% end %}
+                    <td>
+                        {% if character.last_location %}
+                            {{ character.last_location.system.eve_name }}
+                        {% else %}
+                            <span class="pending">{{ _('PENDING') }}</span>
+                        {% end %}
+                    </td>
+                    <td>
+                        {% if character.last_ship %}
+                            {{ character.last_ship.eve_type.eve_name }}
+                        {% else %}
+                            <span class="pending">{{ _('PENDING') }}</span>
+                        {% end %}
+                    </td>
+                    <td>
+                        {% if character.sp %}
+                            {{ "%.1f" % (character.sp / 1000000) }}M
+                        {% else %}
+                            <span class="pending">{{ _('PENDING') }}</span>
+                        {% end %}
+                    </td>
+                </tr>
+            {% end %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% end %}
+
+{% if len(characters_external) %}
+<div class="row characters_section">
+    <div class="col-sm-12">
+        <h2>{{ _('CHARACTERS_EXTERNAL') }}</h2>
+        <p>{{ _('CHARACTERS_EXTERNAL_INTRO') }}</p>
+        <table class="table">
+            <thead class="thead-inverse">
+                <tr>
+                    <th></th>
+                    <th>Character</th>
+                    <th>Corporation/Alliance</th>
+                    <th>Location</th>
+                    <th>Ship</th>
+                    <th>SP</th>
+                </tr>
+            </thead>
+            <tbody>
+            {% for character in characters_external %}
+                <tr>
+                    <td><img src="https://image.eveonline.com/Character/{{ character.character_id }}_50.jpg"></td>
+                    <td>{{ character.character_name }}</td>
+                    <td>
+                        {{ character.corporation.name }}
+                        {% if character.alliance_name %}
+                            ({{ character.alliance_name }})
+                        {% end %}
+                    <td>
+                        {% if character.last_location %}
+                            {{ character.last_location.system.eve_name }}
+                        {% else %}
+                            <span class="pending">{{ _('PENDING') }}</span>
+                        {% end %}
+                    </td>
+                    <td>
+                        {% if character.last_ship %}
+                            {{ character.last_ship.eve_type.eve_name }}
+                        {% else %}
+                            <span class="pending">{{ _('PENDING') }}</span>
+                        {% end %}
+                    </td>
+                    <td>
+                        {% if character.sp %}
+                            {{ "%.1f" % (character.sp / 1000000) }}M
+                        {% else %}
+                            <span class="pending">{{ _('PENDING') }}</span>
+                        {% end %}
+                    </td>
+                </tr>
+            {% end %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% end %}
+
+
+{% end %}
 
 
 <div class="row characters_section">

@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+
+{% block title %}{{ _('SPECOPS') }}{% end %}
+
+{% block body %}
+<div class="row">
+	<div class="col-sm-12">
+		<h1>{{ _('SPECOPS_TITLE') }}</h1>
+		<p>{{ _('SPECOPS_INTRO') }}</p>
+	</div>
+</div>
+<div class="row">
+    <div class="col-md-2">
+        <ul class="nav nav-pills nav-stacked">
+            <li role="presentation" class="active"><a href="#">{{ _('SPECOPS_RADAR') }}</li>
+            <li><a href="#">{{ _('SPECOPS_KILLS') }}</a></li>
+        </ul>
+    </div>
+</div>
+{% end %}

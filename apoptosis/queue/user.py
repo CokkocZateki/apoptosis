@@ -1,22 +1,20 @@
 import random
 
-import celery
-
 from anoikis.api.eve.esi import characters as esi_characters
-from anoikis.api.exceptions import InvalidToken
+from anoikis.api.exceptions import InvalidToken, ExpiredToken
 
 from apoptosis.models import session 
 from apoptosis.models import UserModel, CharacterModel, CharacterLocationHistory, EVESolarSystemModel
 from apoptosis.models import CharacterCorporationHistory, EVECorporationModel, EVETypeModel, CharacterShipHistory
 from apoptosis.models import CharacterSkillModel, EVESkillModel
 
-from apoptosis.queue.celery import celery_queue
-
 from apoptosis.log import eve_log, job_log
 
 from apoptosis.eve.sso import refresh_access_token
 
 from datetime import datetime
+
+from apoptosis.queue.celery import celery_queue
 
 
 def setup():
@@ -29,15 +27,16 @@ def setup_user(user):
     job_log.debug("user.setup_user {}".format(user))
 
     for character in user.characters:
-        setup_character(character)
+        if character.refresh_token is not None:
+            setup_character(character)
 
 def setup_character(character):
     job_log.debug("user.setup_character {}".format(character.character_name))
 
-    refresh_character_location.apply_async(args=(character.id,), countdown=random.randint(0, 120))
-    refresh_character_ship.apply_async(args=(character.id,), countdown=random.randint(0, 120))
-    refresh_character_corporation.apply_async(args=(character.id,), countdown=random.randint(0, 120))
-    refresh_character_skills.apply_async(args=(character.id,), countdown=random.randint(0, 120))
+    refresh_character_location.apply_async(args=(character.id,), countdown=random.randint(0, 300))
+    refresh_character_ship.apply_async(args=(character.id,), countdown=random.randint(0, 300))
+    refresh_character_corporation.apply_async(args=(character.id,), countdown=random.randint(0, 300))
+    refresh_character_skills.apply_async(args=(character.id,), countdown=random.randint(0, 300))
 
 @celery_queue.task(ignore_result=True)
 def refresh_character_location(character_id, recurring=30):
@@ -49,17 +48,21 @@ def refresh_character_location(character_id, recurring=30):
 
     try:
         system_id = esi_characters.location(character.character_id, access_token=character.access_token)
-    except InvalidToken:
-        refresh_access_token(character)
-        system_id = esi_characters.location(character.character_id, access_token=character.access_token)
+    except (InvalidToken, ExpiredToken):
+        try:
+            refresh_access_token(character)
+            system_id = esi_characters.location(character.character_id, access_token=character.access_token)
+        except:
+            return job_log.warn("removing user.refresh_character_ship {}".format(character.character_name))
 
     if system_id is not None:
         system_id = system_id["solar_system_id"]
         system = EVESolarSystemModel.from_id(system_id)
 
         if len(character.location_history) and system.id is character.location_history[-1].system_id:
-            # don't update location history if the user is still in the same system
-            pass
+            # backoff
+            if recurring <= 300:
+                recurring = recurring + 1
         else:
             history_entry = CharacterLocationHistory(character, system)
             eve_log.info("{} moved to {}".format(character.character_name, system.eve_name))
@@ -79,9 +82,13 @@ def refresh_character_ship(character_id, recurring=60):
 
     try:
         type_id = esi_characters.ship(character.character_id, access_token=character.access_token)
-    except InvalidToken:
-        refresh_access_token(character)
-        type_id = esi_characters.ship(character.character_id, access_token=character.access_token)
+    except (InvalidToken, ExpiredToken):
+        try:
+            refresh_access_token(character)
+            type_id = esi_characters.ship(character.character_id, access_token=character.access_token)
+        except:
+            return job_log.warn("removing user.refresh_character_ship {}".format(character.character_name))
+
 
     if type_id is not None:
         item_id = type_id["ship_item_id"]
@@ -90,7 +97,9 @@ def refresh_character_ship(character_id, recurring=60):
         eve_type = EVETypeModel.from_id(type_id)
 
         if len(character.ship_history) and character.ship_history[-1].eve_type == eve_type:
-            pass
+            # backoff
+            if recurring <= 300:
+                recurring = recurring + 1
         else:
             eve_log.info("{} boarded {}".format(character.character_name, eve_type.eve_name))
 
@@ -124,10 +133,9 @@ def refresh_character_corporation(character_id, recurring=3600):
             session_entry.join_date = datetime.now()  # XXX fetch this from the actual join date?
             session.add(session_entry)
             session.commit()
-            return
         elif len(character.corporation_history) and character.corporation_history[-1].corporation is corporation:
             # Character is still in the same corporation as the last time we checked, we need to do nothing
-            return
+            pass
         elif len(character.corporation_history) and character.corporation_history[-1].corporation is not corporation:
             # Character changed corporation, close the last one and create a new one
             previously = character.corporation_history[-1]
@@ -141,10 +149,10 @@ def refresh_character_corporation(character_id, recurring=3600):
 
             session.commit()
 
-            eve_log.info("{} changed corporations {} -> {}".format(
-                character.character_name,
-                previously.corporation.name,
-                currently.corporation.name)
+            eve_log.warn("{} changed corporations {} -> {}".format(
+                character,
+                previously.corporation,
+                currently.corporation)
             )
 
     if recurring:
@@ -158,11 +166,14 @@ def refresh_character_skills(character_id, recurring=14400):
 
     try:
         skills = esi_characters.skills(character.character_id, access_token=character.access_token)
-    except InvalidToken:
-        refresh_access_token(character)
-        skills = esi_characters.skills(character.character_id, access_token=character.access_token)
+    except (InvalidToken, ExpiredToken):
+        try:
+            refresh_access_token(character)
+            skills = esi_characters.skills(character.character_id, access_token=character.access_token)
+        except:
+            return job_log.warn("removing user.refresh_character_ship {}".format(character.character_name))
 
-    if "skills" in skills:
+    if skills and "skills" in skills:  # XXX why can skills be None here?
         skills = skills["skills"]
 
         for skill in skills:
