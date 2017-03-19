@@ -132,8 +132,10 @@ class ESIScopeModel(Base):
     )
 
     def __init__(self, name):
-        self.name == name
+        self.name = name
 
+    def __repr__(self):
+        return "ESIScopeModel({})".format(self.name)
 
 class CharacterModel(Base):
     user_id = Column(Integer, ForeignKey("user.id"))
@@ -160,7 +162,6 @@ class CharacterModel(Base):
                 esiscope_model = ESIScopeModel(esiscope)
 
             self.esi_scopes.append(esiscope_model)
-
 
     @classmethod
     async def from_api(cls, character_id):

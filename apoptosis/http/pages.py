@@ -174,8 +174,9 @@ class LoginCallbackPage(AuthPage):
                 character.refresh_token = refresh_token
                 character.account_hash = account_hash
 
-                # update scopes
-                a = 1
+                # For our scopes we see if they already exist, if they don't we create them and hang them
+                # on the character
+                character.update_scopes(character_scopes)
             else:
                 sec_log.warn("user {} tried to add {} but belongs to {}".format(self.current_user, character, character.user))
                 raise tornado.web.HTTPError(403)
