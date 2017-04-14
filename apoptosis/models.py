@@ -506,5 +506,36 @@ class LocalScanMembershipModel(Base):
     when = Column(DateTime)
 
 
+class NotificationTargetModel(Base):
+    group_id = Column(Integer, ForeignKey("group.id"))
+    group = relationship("GroupModel", backref="notification_targets")
+
+    user_id = Column(Integer, ForeignKey("user.id"))
+    user = relationship("UserModel", backref="notification_targets")
+
+
+class SystemWatchModel(Base):
+    group_id = Column(Integer, ForeignKey("group.id"))
+    group = relationship("GroupModel", backref="system_watches")
+
+    user_id = Column(Integer, ForeignKey("user.id"))
+    user = relationship("UserModel", backref="system_watches")
+
+    system_id = Column(Integer, ForeignKey("evesolarsystem.id"))
+    system = relationship("EVESolarSystemModel")
+
+    # XXX many-to-many with notification targets
+
+
+class KillWatchModel(Base):
+    group_id = Column(Integer, ForeignKey("group.id"))
+    group = relationship("GroupModel", backref="kill_watches")
+
+    user_id = Column(Integer, ForeignKey("user.id"))
+    user = relationship("UserModel", backref="kill_watches")
+
+    # XXX many-to-many with notification targets
+
+
 if __name__ == '__main__':
     Base.metadata.create_all(engine)
