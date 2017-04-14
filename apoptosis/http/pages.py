@@ -680,6 +680,10 @@ class AdminMembershipAllowPage(AuthPage):
         membership = self.model_by_id(MembershipModel, "membership_id")
         membership.pending = 0
 
+        for identity in membership.user.slack_identities:
+            member = await slack.user_email_to_id(identity.email)
+            await slack.group_invite(membership.group.slug, member)
+
         session.add(membership)
         session.commit()
 
@@ -696,6 +700,10 @@ class AdminMembershipDenyPage(AuthPage):
         membership = self.model_by_id(MembershipModel, "membership_id")
 
         group_id = membership.group.id
+
+        for identity in membership.user.slack_identities:
+            member = await slack.user_email_to_id(identity.email)
+            await slack.group_kick(membership.group.slug, member)
 
         session.delete(membership)
         session.commit()
