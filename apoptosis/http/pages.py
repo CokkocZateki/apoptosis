@@ -729,8 +729,7 @@ class AdminUsersPage(AuthPage):
     @admin_required
     async def get(self):
         users = session.query(UserModel).all()
-        users = sorted(users, key=lambda x: x.sp)
-
+        users = sorted(users, key=lambda x: x.main_character.character_name)
 
         return self.render("admin_users.html", users=users)
 

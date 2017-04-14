@@ -28,8 +28,6 @@ async def slack_request(action, **params):
 
     url = "https://slack.com/api/{0}?{1}".format(action, encoded_params)
 
-    svc_log.info("requesting {}".format(url))
- 
     request = HTTPRequest(url)
     try:
         response = await slack_client.fetch(request)
@@ -39,9 +37,11 @@ async def slack_request(action, **params):
             retry_after = e.response.headers.get("Retry-After", None)
 
             if retry_after is not None:
-                svc_log.warn("slack throttled for {}s".format(retry_after))
+                svc_log.warn("slack throttled for {}s: {}".format(retry_after, url))
 
                 await tornado.gen.sleep(int(retry_after) + 1)
+
+                svc_log.warn("slack done throttling: {}".format(url))
 
                 # Redo our call
                 response = await slack_client.fetch(request)
@@ -123,7 +123,6 @@ async def group_upkeep(group):
     svc_log.warn("running slack group upkeep for {} ({}), inviting {}, kicking {}".format(group.slug, len(slack_channel_current_members), len(slack_to_invite), len(slack_to_kick)))
 
     if group.slug not in ('eft-warriors', 'atxv', 'tech', 'specops', 'intel-hk', 'intel-citadels', 'intel-capitals', 'intel-supers', 'roamers'):
-        print("yes")
         return
 
     for member in slack_to_invite:
@@ -132,7 +131,8 @@ async def group_upkeep(group):
     for member in slack_to_kick:
         await group_kick(group.slug, member)
 
-    return True
+    return None
+
 
 async def group_archive(group_slug):
     """Archive a channel making it unavailable to users."""
@@ -141,12 +141,14 @@ async def group_archive(group_slug):
     await slack_request("groups.archive", channel=channel_id)
     svc_log.warn("archived channel {}".format(group_slug))
 
+
 async def group_unarchive(group_slug):
     """Restore a channel from the archive so it can be re-used."""
     channel_id = await group_slug_to_id(group_slug)
 
     await slack_request("groups.unarchive", channel=channel_id)
     svc_log.warn("unarchived channel {}".format(group_slug))
+
 
 async def group_slug_to_id(group_slug):
     groups = await slack_request("groups.list")
@@ -158,26 +160,6 @@ async def group_slug_to_id(group_slug):
     else:
         raise ValueError("No Slack group found for", group_slug)
 
-async def groups_upkeep(group_slugs):
-    """Iterate through the group slugs, archiving channels that do not exist in the list and
-       creating/unarchiving does that do."""
-
-    slack_groups = await slack_request("groups.list")
-
-    group_slugs = set(["midnight-rodeo"] + group_slugs)
-    slack_slugs= [group["name"] for group in slack_groups if not group["is_archived"]]
-
-    to_create = group_slugs - slack_slugs
-    to_remove = slack_slugs - group_slugs
-
-    for group in to_create:
-        await group_create(group)
-
-    for group in to_remove:
-        await group_upkeep(group, [])
-        await group_remove(group)
-
-    return True
 
 async def user_id_to_email(user_id):
     users = await slack_request("users.list")
@@ -188,17 +170,12 @@ async def user_id_to_email(user_id):
             return user["email"]
 
 
-async def user_email_to_id(user_email):
-    if user_email in USER_EMAIL_TO_ID:
-        return USER_EMAIL_TO_ID[user_email]
+async def user_email_to_id(requested_email):
+    if requested_email not in USER_EMAIL_TO_ID:
+        await refresh_user_email_to_ids()
 
-    users = await slack_request("users.list")
-    users = users["members"]
-
-    for user in users:
-        if user["profile"].get("email", None) == user_email:
-            USER_EMAIL_TO_ID[user_email] = user["id"]
-            return user["id"]
+    if requested_email in USER_EMAIL_TO_ID:
+        return USER_EMAIL_TO_ID[requested_email]
 
 
 async def refresh_user_email_to_ids():

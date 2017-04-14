@@ -443,8 +443,17 @@ class EVETypeModel(Base):
 
 class EVECharacterModel(Base):
     eve_id = Column(BigInteger)
-    eve_name = Column(String)
+    name = Column(String)
 
+    @classmethod
+    def from_id(cls, eve_id):
+        instance = session.query(cls).filter(cls.eve_id==eve_id).first()
+
+        if not instance:
+            instance = cls()
+            instance.eve_id = eve_id
+
+        return instance
 
 class EVECorporationModel(Base):
     eve_id = Column(BigInteger)

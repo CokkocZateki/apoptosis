@@ -52,15 +52,15 @@ def refresh_group_members(group_id, recurring=60):
         refresh_group_members.apply_async(args=(group_id, recurring), countdown=recurring)
 
 
-@celery_queue.task(ignore_result=True)
-def refresh_group_slack(group_id, recurring=90):
+@celery_queue.task(bind=True, ignore_result=True, default_retry_delay=300)
+def refresh_group_slack(self, group_id, recurring=300):
     """Refresh a group's slack channel."""
+    try:
+        group = session.query(GroupModel).filter(GroupModel.id==group_id).one()
 
-    group = session.query(GroupModel).filter(GroupModel.id==group_id).one()
+        tornado.ioloop.IOLoop.current().run_sync(lambda: slack.group_upkeep(group))
 
-    job_log.warn("group.refresh_group_slack {}".format(group))
-
-    # tornado.ioloop.IOLoop.current().run_sync(lambda: slack.group_upkeep(group))
-
-    if recurring:
-        refresh_group_members.apply_async(args=(group_id, recurring), countdown=recurring)
+        if recurring:
+            refresh_group_slack.apply_async(args=(group_id, recurring), countdown=recurring)
+    except Exception as e:
+        self.retry(exc=e)

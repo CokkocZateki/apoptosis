@@ -220,6 +220,6 @@ def refresh_character_skills(self, character_id, recurring=14400):
             session.commit()
 
         if recurring:
-            refresh_character_corporation.apply_async(args=(character_id, recurring), countdown=recurring)
+            refresh_character_skills.apply_async(args=(character_id, recurring), countdown=recurring)
     except requests.exceptions.ConnectionError as e:
         self.retry(exc=e)
