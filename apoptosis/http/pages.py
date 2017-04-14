@@ -444,15 +444,16 @@ class GroupsJoinPage(AuthPage):
             await slack.group_message(group.slug, "New pending member: {}".format(self.current_user.main_character.character_name))
             membership.pending = True
         else:
+            for identity in self.current_user.slack_identities:
+                member = await slack.user_email_to_id(identity.email)
+                await slack.group_invite(group.slug, member)
+
             await slack.group_message(group.slug, "New member: {}".format(self.current_user.main_character.character_name))
 
         session.add(membership)
         session.commit()
 
         sec_log.info("user {} joined group {}".format(membership.user, membership.group))
-
-        # XXX move to task
-        #await slack.group_upkeep(group)
 
         return self.redirect("/groups/join/success?membership_id={}".format(membership.id))
 
@@ -479,10 +480,14 @@ class GroupsLeavePage(AuthPage):
 
         for membership in group.memberships:
             if membership.user == self.current_user:
-                await slack.group_message(group.slug, "Member left: {}".format(self.current_user.main_character.character_name))
-
                 session.delete(membership)
                 session.commit()
+
+                for identity in self.current_user.slack_identities:
+                    member = await slack.user_email_to_id(identity.email)
+                    await slack.group_kick(group.slug, member)
+
+                await slack.group_message(group.slug, "Member left: {}".format(self.current_user.main_character.character_name))
 
                 break
         else:
