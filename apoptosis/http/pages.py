@@ -5,8 +5,6 @@ try:
 except ImportError:
     from urllib import urlencode
 
-import base64
-
 from datetime import datetime
 
 import tornado.web
@@ -14,8 +12,6 @@ import tornado.httpclient
 
 from apoptosis.log import app_log, sec_log
 from apoptosis.services import slack
-from apoptosis.cache import redis_cache
-from apoptosis import config
 from apoptosis.eve.sso import sso_auth, sso_login
 
 from apoptosis.http.base import (
@@ -42,11 +38,13 @@ def login_required(func):
         await func(self)
     return inner
 
+
 def internal_required(func):
     async def inner(self, *args, **kwargs):
         self.requires_internal()
         await func(self)
     return inner
+
 
 def admin_required(func):
     async def inner(self, *args, **kwargs):
@@ -54,11 +52,13 @@ def admin_required(func):
         await func(self)
     return inner
 
+
 def special_required(func):
     async def inner(self, *args, **kwargs):
         self.requires_special()
         await func(self)
     return inner
+
 
 def fc_required(func):
     async def inner(self, *args, **kwargs):
@@ -66,11 +66,13 @@ def fc_required(func):
         await func(self)
     return inner
 
+
 def hr_required(func):
     async def inner(self, *args, **kwargs):
         self.requires_hr()
         await func(self)
     return inner
+
 
 class LoginPage(AuthPage):
     async def get(self):
@@ -148,16 +150,16 @@ class LoginCallbackPage(AuthPage):
         return character_id, character_scopes, access_token, refresh_token, account_hash
 
     async def _create(self, character_id, character_scopes, access_token, refresh_token, account_hash): 
-        # We don't have an account with this character on it yet. Let's fetch the 
-        # character information from the XML API and fill it into a model, tie it
-        # up to a fresh new user and log it in
+        # We don't have an account with this character on it yet. Let's fetch
+        # the character information from the XML API and fill it into a model,
+        # tie it up to a fresh new user and log it in
         character = await CharacterModel.from_api(character_id)
         character.access_token = access_token
         character.refresh_token = refresh_token
         character.account_hash = account_hash
 
-        # For our scopes we see if they already exist, if they don't we create them and hang them
-        # on the character
+        # For our scopes we see if they already exist, if they don't we create
+        # them and hang them on the character
         character.update_scopes(character_scopes)
 
         return character
@@ -166,22 +168,32 @@ class LoginCallbackPage(AuthPage):
         character_id, character_scopes, access_token, refresh_token, account_hash = await self._sso_response()
 
         # See if we already have this character
-        character = session.query(CharacterModel).filter(CharacterModel.character_id==character_id).first()
+        character = session.query(
+            CharacterModel).filter(
+                CharacterModel.character_id == character_id).first()
 
-        if character: # XXX add new scopes
+        if character:  # XXX add new scopes
             if character.user == self.current_user:
                 character.access_token = access_token
                 character.refresh_token = refresh_token
                 character.account_hash = account_hash
 
-                # For our scopes we see if they already exist, if they don't we create them and hang them
-                # on the character
+                # For our scopes we see if they already exist, if they
+                # don't we create them and hang them on the character
                 character.update_scopes(character_scopes)
             else:
-                sec_log.warn("user {} tried to add {} but belongs to {}".format(self.current_user, character, character.user))
+                sec_log.warn(
+                    "user {} tried to add {} but belongs to {}".format(
+                        self.current_user, character, character.user))
                 raise tornado.web.HTTPError(403)
         else:
-            character = await self._create(character_id, character_scopes, access_token, refresh_token, account_hash)
+            character = await self._create(
+                character_id,
+                character_scopes,
+                access_token,
+                refresh_token,
+                account_hash
+            )
 
         # Append the character to the currently logged in character
         self.current_user.characters.append(character)
@@ -194,7 +206,8 @@ class LoginCallbackPage(AuthPage):
 
         queue_user.setup_character(character)
 
-        self.flash_success(self.locale.translate("CHARACTER_ADD_SUCCESS_ALERT"))
+        self.flash_success(
+            self.locale.translate("CHARACTER_ADD_SUCCESS_ALERT"))
 
         self.redirect("/characters")
 
@@ -202,16 +215,21 @@ class LoginCallbackPage(AuthPage):
         character_id, character_scopes, access_token, refresh_token, account_hash = await self._sso_response()
 
         # See if we already have this character
-        character = session.query(CharacterModel).filter(CharacterModel.character_id==character_id).first()
+        character = session.query(
+            CharacterModel).filter(
+                CharacterModel.character_id == character_id).first()
 
-        # The character already exists so we log in to the corresponding user and
-        # redirect to the success page
+        # The character already exists so we log in to the corresponding user
+        # and redirect to the success page
         if character:
             if character.account_hash != account_hash:
-                sec_log.critical("account hash for %s changed denying login" % character)
+                sec_log.critical(
+                    "account hash for {} changed denying login".format(
+                        character))
                 raise tornado.web.HTTPError(400)
 
-            sec_log.info("logged in %s through %s" % (character.user, character))
+            sec_log.info(
+                "logged in {} through {}".format(character.user, character))
             self.set_current_user(character.user)
 
             login = UserLoginModel()
@@ -224,10 +242,16 @@ class LoginCallbackPage(AuthPage):
 
             return self.redirect("/login/success")
         else:
-            # We don't have an account with this character on it yet. Let's fetch the 
-            # character information from the XML API and fill it into a model, tie it
-            # up to a fresh new user and log it in
-            character = await self._create(character_id, character_scopes, access_token, refresh_token, account_hash)
+            # We don't have an account with this character on it yet. Let's
+            # fetch the character information from the XML API and fill it
+            # into a model, tie it up to a fresh new user and log it in
+            character = await self._create(
+                character_id,
+                character_scopes,
+                access_token,
+                refresh_token,
+                account_hash
+            )
             character.is_main = True
             character.pub_date = datetime.now()
 
@@ -253,8 +277,8 @@ class LoginCallbackPage(AuthPage):
 
             queue_user.setup_character(character)
 
-            # Redirect to another page with some more information for the user of what
-            # is going on
+            # Redirect to another page with some more information for the
+            # user of what is going on
             return self.redirect("/login/created")
 
 
@@ -291,14 +315,12 @@ class HomePage(AuthPage):
 
 
 class CharactersPage(AuthPage):
-
     @login_required
     async def get(self):
         return self.render("characters.html", login_url=sso_login)
 
 
 class CharactersSelectMainPage(AuthPage):
-
     @login_required
     async def post(self):
         character = self.model_by_id(CharacterModel, "character_id")
@@ -307,11 +329,9 @@ class CharactersSelectMainPage(AuthPage):
             char.is_main = False
 
         character.is_main = True
-        
+
         session.add(self.current_user)
         session.commit()
-
-        # TRIGGER LDAP
 
         return self.redirect("/characters/select_main/success")
 
@@ -319,32 +339,35 @@ class CharactersSelectMainPage(AuthPage):
 class CharactersSelectMainSuccessPage(AuthPage):
     @login_required
     async def get(self):
-        self.flash_success(self.locale.translate("CHARACTERS_CHARACTERS_MAIN_SELECT_SUCCESS"))
+        self.flash_success(
+            self.locale.translate("CHARACTERS_CHARACTERS_MAIN_SELECT_SUCCESS"))
         return self.redirect("/characters")
 
 
 class ServicesPage(AuthPage):
-
     @login_required
     async def get(self):
         return self.render("services.html")
 
-class ServicesDeleteSlackIdentityPage(AuthPage):
 
+class ServicesDeleteSlackIdentityPage(AuthPage):
     @login_required
     async def post(self):
-        slackidentity = self.model_by_id(SlackIdentityModel, "slackidentity_id")
+        slackidentity = self.model_by_id(
+            SlackIdentityModel, "slackidentity_id")
 
         session.delete(slackidentity)
         session.commit()
 
-        self.flash_success(self.locale.translate("SERVICES_DELETE_SLACK_IDENTITY_SUCCESS_ALERT"))
+        self.flash_success(
+            self.locale.translate(
+                "SERVICES_DELETE_SLACK_IDENTITY_SUCCESS_ALERT")
+        )
 
         return self.redirect("/services")
 
 
 class ServicesAddSlackIdentityPage(AuthPage):
-
     @login_required
     async def post(self):
         slack_id = self.get_argument("slack_id", None)
@@ -358,43 +381,56 @@ class ServicesAddSlackIdentityPage(AuthPage):
         session.add(slackidentity)
         session.commit()
 
-        sec_log.info("slackidentity {} added to {}".format(slackidentity, slackidentity.user))
+        sec_log.info(
+            "slackidentity {} added to {}".format(
+                slackidentity, slackidentity.user)
+        )
 
-        return self.redirect("/services/add_slack_identity/success?slackidentity_id={id}".format(id=slackidentity.id))
+        return self.redirect(
+            "/services/add_slack_identity/success?slackidentity_id={id}".format(
+                 id=slackidentity.id)
+        )
 
 
 class ServicesAddSlackIdentitySuccessPage(AuthPage):
     @login_required
     async def get(self):
-        slackidentity = self.model_by_id(SlackIdentityModel, "slackidentity_id")
-        self.flash_success(self.locale.translate("SERVICES_ADD_SLACK_IDENTITY_SUCCESS_ALERT"))
+        self.flash_success(
+            self.locale.translate("SERVICES_ADD_SLACK_IDENTITY_SUCCESS_ALERT"))
         return self.redirect("/services")
 
 
 class ServicesSendVerificationSlackIdentityPage(AuthPage):
-
     @login_required
     async def post(self):
-        slackidentity = self.model_by_id(SlackIdentityModel, "slackidentity_id")
+        slackidentity = self.model_by_id(
+            SlackIdentityModel, "slackidentity_id")
 
         value = await slack.verify(slackidentity)
 
         if value is False:
-            self.flash_error(self.locale.translate("SERVICES_SEND_SLACK_IDENTITY_FAILURE_ALERT"))
-            return self.redirect("/services?slackidentity_id={}".format(slackidentity.id))
+            self.flash_error(
+                self.locale.translate(
+                    "SERVICES_SEND_SLACK_IDENTITY_FAILURE_ALERT"))
+            return self.redirect(
+                "/services?slackidentity_id={}".format(slackidentity.id))
 
-        sec_log.info("slackidentity {} for {} sent verification".format(slackidentity, slackidentity.user))
+        sec_log.info(
+            "slackidentity {} for {} sent verification".format(
+                slackidentity, slackidentity.user)
+        )
 
-        return self.render("services_verify_slack_identity.html", slackidentity=slackidentity)
+        return self.render(
+            "services_verify_slack_identity.html", slackidentity=slackidentity)
 
 
 class ServicesVerifyVerificationSlackIdentityPage(AuthPage):
-
     @login_required
     async def post(self):
         code = self.get_argument("code", None)
 
-        slackidentity = self.model_by_id(SlackIdentityModel, "slackidentity_id")
+        slackidentity = self.model_by_id(
+            SlackIdentityModel, "slackidentity_id")
 
         if slackidentity.verification_code == code:
             slackidentity.verification_done = True
@@ -402,25 +438,33 @@ class ServicesVerifyVerificationSlackIdentityPage(AuthPage):
             session.add(slackidentity)
             session.commit()
 
-            sec_log.info("slackidentity {} for {} verified".format(slackidentity, slackidentity.user))
-            self.flash_success(self.locale.translate("SERVICES_VERIFY_SLACK_IDENTITY_SUCCESS_ALERT"))
+            sec_log.info(
+                "slackidentity {} for {} verified".format(
+                    slackidentity, slackidentity.user))
+            self.flash_success(
+                self.locale.translate(
+                    "SERVICES_VERIFY_SLACK_IDENTITY_SUCCESS_ALERT"))
 
-            return self.redirect("/services?slackidentity_id={}".format(slackidentity.id))
+            return self.redirect(
+                "/services?slackidentity_id={}".format(slackidentity.id))
         else:
-            self.flash_error(self.locale.translate("SERVICES_VERIFY_SLACK_IDENTITY_FAILURE_ALERT"))
-            return self.redirect("/services?slackidentity_id={}".format(slackidentity.id))
+            self.flash_error(
+                self.locale.translate(
+                    "SERVICES_VERIFY_SLACK_IDENTITY_FAILURE_ALERT"))
+            return self.redirect(
+                "/services?slackidentity_id={}".format(slackidentity.id))
 
 
 class ServicesVerifySlackIdentitySuccessPage(AuthPage):
     @login_required
     async def get(self):
-        slackidentity = self.model_by_id(SlackIdentityModel, "slackidentity_id")
-        self.flash_success(self.locale.translate("SERVICES_VERIFY_SLACK_IDENTITY_SUCCESS_ALERT"))
+        self.flash_success(
+            self.locale.translate(
+                "SERVICES_VERIFY_SLACK_IDENTITY_SUCCESS_ALERT"))
         return self.redirect("/services")
 
 
 class GroupsPage(AuthPage):
-
     @login_required
     @internal_required
     async def get(self):
@@ -441,38 +485,50 @@ class GroupsJoinPage(AuthPage):
         membership.group = group
 
         if group.requires_approval:
-            await slack.group_message(group.slug, "New pending member: {}".format(self.current_user.main_character.character_name))
+            await slack.group_message(
+                group.slug,
+                "New pending member: {}".format(
+                    self.current_user.main_character.character_name)
+            )
             membership.pending = True
         else:
             for identity in self.current_user.slack_identities:
                 member = await slack.user_email_to_id(identity.email)
                 await slack.group_invite(group.slug, member)
 
-            await slack.group_message(group.slug, "New member: {}".format(self.current_user.main_character.character_name))
+            await slack.group_message(
+                group.slug,
+                "New member: {}".format(
+                    self.current_user.main_character.character_name)
+            )
 
         session.add(membership)
         session.commit()
 
-        sec_log.info("user {} joined group {}".format(membership.user, membership.group))
+        sec_log.info(
+            "user {} joined group {}".format(
+                membership.user, membership.group)
+        )
 
-        return self.redirect("/groups/join/success?membership_id={}".format(membership.id))
+        return self.redirect(
+            "/groups/join/success?membership_id={}".format(membership.id))
 
 
 class GroupsJoinSuccessPage(AuthPage):
-
     @login_required
     @internal_required
     async def get(self):
         membership = self.model_by_id(MembershipModel, "membership_id")
         if membership.pending:
-            self.flash_success(self.locale.translate("GROUPS_JOIN_SUCCESS_PENDING_ALERT"))
+            self.flash_success(
+                self.locale.translate("GROUPS_JOIN_SUCCESS_PENDING_ALERT"))
         else:
-            self.flash_success(self.locale.translate("GROUPS_JOIN_SUCCESS_DONE_ALERT"))
+            self.flash_success(
+                self.locale.translate("GROUPS_JOIN_SUCCESS_DONE_ALERT"))
         return self.redirect("/groups")
 
 
 class GroupsLeavePage(AuthPage):
-
     @login_required
     @internal_required
     async def post(self):
@@ -487,32 +543,32 @@ class GroupsLeavePage(AuthPage):
                     member = await slack.user_email_to_id(identity.email)
                     await slack.group_kick(group.slug, member)
 
-                await slack.group_message(group.slug, "Member left: {}".format(self.current_user.main_character.character_name))
+                await slack.group_message(
+                    group.slug,
+                    "Member left: {}".format(
+                        self.current_user.main_character.character_name)
+                )
 
                 break
         else:
             raise tornado.web.HTTPError(400)
 
-        sec_log.info("user {} left group {}".format(membership.user, membership.group))
+        sec_log.info(
+            "user {} left group {}".format(membership.user, membership.group))
 
-        # XXX move to task
-        #await slack.group_upkeep(group)
-
-        return self.redirect("/groups/leave/success?group_id={}".format(group.id))
+        return self.redirect(
+            "/groups/leave/success?group_id={}".format(group.id))
 
 
 class GroupsLeaveSuccessPage(AuthPage):
-
     @login_required
     @internal_required
     async def get(self):
-        group = self.model_by_id(GroupModel, "group_id")
         self.flash_success(self.locale.translate("GROUPS_LEAVE_SUCCESS_ALERT"))
         return self.redirect("/groups")
 
 
 class PingPage(AuthPage):
-
     @login_required
     @internal_required
     async def get(self):
@@ -520,7 +576,6 @@ class PingPage(AuthPage):
 
 
 class PingSendAllPage(AuthPage):
-
     @login_required
     @internal_required
     async def post(self):
@@ -529,9 +584,10 @@ class PingSendAllPage(AuthPage):
         if not message:
             raise tornado.web.HTTPError(400)
 
-        message = "{} ({})".format(message, self.current_user.main_character.character_name)
+        message = "{} ({})".format(
+            message, self.current_user.main_character.character_name)
 
-        result = await slack.group_ping("midnight-rodeo", message)
+        await slack.group_ping("midnight-rodeo", message)
 
         app_log.info(
             "%s sent all ping: %s" % (self.current_user, message)
@@ -541,7 +597,6 @@ class PingSendAllPage(AuthPage):
 
 
 class PingSendAllSuccessPage(AuthPage):
-
     @login_required
     @internal_required
     async def get(self):
@@ -550,7 +605,6 @@ class PingSendAllSuccessPage(AuthPage):
 
 
 class PingSendGroupPage(AuthPage):
-
     @login_required
     @internal_required
     async def post(self):
@@ -560,29 +614,28 @@ class PingSendGroupPage(AuthPage):
         if not message:
             raise tornado.web.HTTPError(400)
 
-        message = "{} ({})".format(message, self.current_user.main_character.character_name)
+        message = "{} ({})".format(
+            message, self.current_user.main_character.character_name)
 
-        result = await slack.group_ping(group.slug, message)
+        await slack.group_ping(group.slug, message)
 
         app_log.info(
-            "%s sent group ping to %s: %s" % (self.current_user, group, message)
+            "%s sent group ping to %s: %s" % (
+                self.current_user, group, message)
         )
 
-        return self.redirect("/ping/send_group/success?group_id={}".format(group.id))
+        return self.redirect(
+            "/ping/send_group/success?group_id={}".format(group.id))
 
 
 class PingSendGroupSuccessPage(AuthPage):
-
     @login_required
     @internal_required
     async def get(self):
-        group = self.model_by_id(GroupModel, "group_id")
-        self.flash_success("foo")
         return self.redirect("/groups")
 
 
 class SpecOpsPage(AuthPage):
-
     @login_required
     @internal_required
     @special_required
@@ -593,7 +646,6 @@ class SpecOpsPage(AuthPage):
 
 
 class HRPage(AuthPage):
-
     @login_required
     @internal_required
     @hr_required
@@ -615,7 +667,6 @@ class FCPage(AuthPage):
 
 
 class AdminPage(AuthPage):
-
     @login_required
     @internal_required
     @admin_required
@@ -625,9 +676,12 @@ class AdminPage(AuthPage):
         memberships = list(session.query(MembershipModel).all())
 
         glance_total = len(characters)
-        glance_internal = len([character for character in characters if character.is_internal])
-        glance_user = len([user for user in users if user.is_internal])
-        glance_membership = len([membership for membership in memberships if membership.pending])
+        glance_internal = len(
+            [character for character in characters if character.is_internal])
+        glance_user = len(
+            [user for user in users if user.is_internal])
+        glance_membership = len(
+            [membership for membership in memberships if membership.pending])
 
         return self.render(
             "admin.html",
@@ -637,8 +691,8 @@ class AdminPage(AuthPage):
             glance_membership=glance_membership
         )
 
-class AdminGroupsPage(AuthPage):
 
+class AdminGroupsPage(AuthPage):
     @login_required
     @internal_required
     @admin_required
@@ -647,8 +701,8 @@ class AdminGroupsPage(AuthPage):
 
         return self.render("admin_groups.html", groups=groups)
 
-class AdminGroupsManagePage(AuthPage):
 
+class AdminGroupsManagePage(AuthPage):
     @login_required
     @internal_required
     @admin_required
@@ -657,22 +711,22 @@ class AdminGroupsManagePage(AuthPage):
 
         self.render("admin_groups_manage.html", group=group)
 
-class AdminGroupsSlackUpkeepPage(AuthPage):
 
+class AdminGroupsSlackUpkeepPage(AuthPage):
     @login_required
     @internal_required
     @admin_required
     async def post(self):
         group = self.model_by_id(GroupModel, "group_id")
 
-        upkeep = await slack.group_upkeep(group)
+        await slack.group_upkeep(group)
 
-        self.flash_success(self.locale.translate("GROUP_SLACK_UPKEEP_SUCCESS_ALERT"))
+        self.flash_success(
+            self.locale.translate("GROUP_SLACK_UPKEEP_SUCCESS_ALERT"))
         self.redirect("/admin/groups/manage?group_id={}".format(group.id))
 
 
 class AdminMembershipAllowPage(AuthPage):
-
     @login_required
     @internal_required
     @admin_required
@@ -687,12 +741,13 @@ class AdminMembershipAllowPage(AuthPage):
         session.add(membership)
         session.commit()
 
-        self.flash_success(self.locale.translate("MEMBERSHIP_ALLOW_SUCCESS_ALERT"))
-        self.redirect("/admin/groups/manage?group_id={}".format(membership.group.id))
+        self.flash_success(
+            self.locale.translate("MEMBERSHIP_ALLOW_SUCCESS_ALERT"))
+        self.redirect(
+            "/admin/groups/manage?group_id={}".format(membership.group.id))
 
 
 class AdminMembershipDenyPage(AuthPage):
-
     @login_required
     @internal_required
     @admin_required
@@ -708,12 +763,12 @@ class AdminMembershipDenyPage(AuthPage):
         session.delete(membership)
         session.commit()
 
-        self.flash_success(self.locale.translate("MEMBERSHIP_DENY_SUCCESS_ALERT"))
+        self.flash_success(
+            self.locale.translate("MEMBERSHIP_DENY_SUCCESS_ALERT"))
         self.redirect("/admin/groups/manage?group_id={}".format(group_id))
 
 
 class AdminGroupsCreatePage(AuthPage):
-
     @login_required
     @internal_required
     @admin_required
@@ -736,7 +791,6 @@ class AdminGroupsCreatePage(AuthPage):
 
 
 class AdminUsersPage(AuthPage):
-
     @login_required
     @internal_required
     @admin_required
@@ -748,7 +802,6 @@ class AdminUsersPage(AuthPage):
 
 
 class AdminUsersDetailPage(AuthPage):
-
     @login_required
     @internal_required
     @admin_required
@@ -759,18 +812,17 @@ class AdminUsersDetailPage(AuthPage):
 
 
 class AdminCharactersPage(AuthPage):
-
     @login_required
     @internal_required
     @admin_required
     async def get(self):
-        characters = session.query(CharacterModel).order_by(CharacterModel.character_name).all()
+        characters = session.query(CharacterModel).order_by(
+            CharacterModel.character_name).all()
 
         return self.render("admin_characters.html", characters=characters)
 
 
 class AdminCharactersDetailPage(AuthPage):
-
     @login_required
     @internal_required
     @admin_required
@@ -778,14 +830,3 @@ class AdminCharactersDetailPage(AuthPage):
         character = self.model_by_id(CharacterModel, "character_id")
 
         return self.render("admin_characters_detail.html", character=character)
-
-
-class AdminGroupsPage(AuthPage):
-
-    @login_required
-    @internal_required
-    @admin_required
-    async def get(self):
-        groups = session.query(GroupModel).all()
-
-        return self.render("admin_groups.html", groups=groups)
