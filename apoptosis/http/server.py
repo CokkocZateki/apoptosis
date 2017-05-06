@@ -44,6 +44,9 @@ from apoptosis.http.pages import (
     SpecOpsPage,
     HRPage,
     FCPage,
+    APIAdminCharactersAutoCompletePage,
+    APIAdminShipsAutoCompletePage,
+    APIAdminSystemsAutoCompletePage
 )
 
 from apoptosis import config
@@ -222,6 +225,18 @@ def make_app():
                 LogoutSuccessPage
             ),
             (
+                r"/api/admin/characters_autocomplete",
+                APIAdminCharactersAutoCompletePage
+            ),
+            (
+                r"/api/admin/ships_autocomplete",
+                APIAdminShipsAutoCompletePage
+            ),
+            (
+                r"/api/admin/systems_autocomplete",
+                APIAdminSystemsAutoCompletePage
+            ),
+            (
                 r"/static/(.*)",
                 tornado.web.StaticFileHandler,
                 {"path": config.tornado_static}
@@ -238,7 +253,7 @@ def main():
     app = make_app()
     app.listen(config.http_port)
 
-    start_queues = True
+    start_queues = False
     if start_queues:
         queue_group.setup()
         queue_user.setup()

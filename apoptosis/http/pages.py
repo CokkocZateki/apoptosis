@@ -26,7 +26,8 @@ from apoptosis.models import (
     CharacterModel,
     SlackIdentityModel,
     GroupModel,
-    MembershipModel
+    MembershipModel,
+    EVESolarSystemModel
 )
 
 import apoptosis.queue.user as queue_user 
@@ -856,3 +857,69 @@ class AdminCharactersDetailPage(AuthPage):
         character = self.model_by_id(CharacterModel, "character_id")
 
         return self.render("admin_characters_detail.html", character=character)
+
+
+class APIAdminCharactersAutoCompletePage(AuthPage):
+    @login_required
+    @internal_required
+    @admin_required
+    async def get(self):
+        # XXX naive
+        query = self.get_argument("query", None)
+
+        if not query:
+            return self.write({"status": "success", "result": []})
+
+        characters = session.query(CharacterModel).order_by(
+            CharacterModel.character_name).all()
+
+        characters = [character for character in characters if character.character_name.startswith(query)]
+
+        return self.write({"status": "success", "result": [
+            {"character_id": character.id,
+             "character_name": character.character_name} for character in characters
+        ]})
+
+
+class APIAdminShipsAutoCompletePage(AuthPage):
+    @login_required
+    @internal_required
+    @admin_required
+    async def get(self):
+        # XXX very naive
+        query = self.get_argument("query", None)
+
+        if not query:
+            return self.write({"status": "success", "result": []})
+
+        characters = session.query(CharacterModel).order_by(
+            CharacterModel.character_name).all()
+
+        characters = [character for character in characters if character.last_ship]
+
+        ships = set(character.last_ship.eve_type for character in characters if character.last_ship.eve_type.eve_name.startswith(query))
+
+        return self.write({"status": "success", "result": [
+            {"ship_id": ship.id,
+             "ship_name": ship.eve_name} for ship in ships
+        ]})
+
+
+class APIAdminSystemsAutoCompletePage(AuthPage):
+    @login_required
+    @internal_required
+    @admin_required
+    async def get(self):
+        # XXX naive
+        query = self.get_argument("query", None)
+
+        if not query:
+            return self.write({"status": "success", "result": []})
+
+        systems = session.query(EVESolarSystemModel).all()
+        systems = [system for system in systems if system.eve_name.startswith(query)]
+
+        return self.write({"status": "success", "result": [
+            {"system_id": system.id,
+             "system_name": system.eve_name} for system in systems
+        ]})
