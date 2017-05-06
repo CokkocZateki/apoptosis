@@ -44,6 +44,8 @@ from apoptosis.http.pages import (
     SpecOpsPage,
     HRPage,
     FCPage,
+    FCFitsPage,
+    FCFitsResultPage,
     APIAdminCharactersAutoCompletePage,
     APIAdminShipsAutoCompletePage,
     APIAdminSystemsAutoCompletePage
@@ -155,6 +157,14 @@ def make_app():
             (
                 r"/fc",
                 FCPage
+            ),
+            (
+                r"/fc/fits",
+                FCFitsPage
+            ),
+            (
+                r"/fc/fits/result",
+                FCFitsResultPage
             ),
             (
                 r"/admin",

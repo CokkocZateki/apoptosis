@@ -1,0 +1,34 @@
+{% extends "base.html" %}
+
+{% block title %}{{ _('FCS') }}{% end %}
+
+{% block body %}
+<div class="row">
+	<div class="col-sm-12">
+		<h1>{{ _('FCS_TITLE') }}</h1>
+		<p>{{ _('FCS_INTRO') }}</p>
+	</div>
+</div>
+
+<div class="row">
+    <div class="col-md-2">
+        <h2>{{ _('FCS_NAV_TITLE') }}</h2>
+        <ul class="nav nav-pills nav-stacked">
+            <li role="presentation" class="active"><a href="/fc/fits">{{ _('FCS_FITS') }}</a></li>
+        </ul>
+    </div>
+    <div class="col-md-10">
+        <h2>{{ _('FCS_FITS_TITLE') }}</h2>
+        <p>{{ ('FCS_FITS_INTRO') }}</p>
+        <h2>{{ _('FCS_FITS_RESULT_TITLE') }}</h2>
+        <p>{{ can_fly }} out of {{ total }} can fly this fit.</p>
+        <pre>{{ fit }}</pre>
+        <h2>{{ _('FCS_FITS_TRY_ANOTHER') }}</h2>
+        <form method="post" action="/fc/fits/result">
+            <input type="hidden" name="_xsrf" value="{{ handler.xsrf_token }}">
+            <textarea name="fit"></textarea><br>
+            <button type="submit">submit</button>
+        </form>
+    </div>
+</div>
+{% end %}

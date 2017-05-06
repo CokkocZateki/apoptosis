@@ -10,6 +10,9 @@ from datetime import datetime
 import tornado.web
 import tornado.httpclient
 
+from anoikis.fit.eft import parse as parse_fit
+from anoikis.static.skills import skills_item
+
 from apoptosis.log import app_log, sec_log
 from apoptosis.services import slack
 from apoptosis.eve.sso import sso_auth, sso_login
@@ -657,13 +660,66 @@ class HRPage(AuthPage):
 
 
 class FCPage(AuthPage):
-
     @login_required
     @internal_required
-    @hr_required
+    @fc_required
     async def get(self):
         return self.render(
             "fc.html"
+        )
+
+
+class FCFitsPage(AuthPage):
+    @login_required
+    @internal_required
+    @fc_required
+    async def get(self):
+        return self.render(
+            "fc_fits.html"
+        )
+
+
+class FCFitsResultPage(AuthPage):
+    @login_required
+    @internal_required
+    @fc_required
+    async def post(self):
+        fit = self.get_argument("fit")
+
+        items = parse_fit(fit)
+        required_skills = dict()
+
+        for item in items:
+            for r in skills_item(item):
+                required_skills[r[2]] = r[4]
+
+        characters = {}
+        character_models = session.query(CharacterModel).all()
+        total = 0
+
+        for character_model in character_models:
+            if not character_model.is_internal:
+                continue
+            total += 1
+
+            for character_skill in character_model.skills:
+                if not character_skill.eve_skill.eve_id in required_skills.keys():
+                    continue
+
+                if character_skill.level >= required_skills[character_skill.eve_skill.eve_id]:
+                    characters[character_model] = characters.get(character_model, [])
+                    characters[character_model].append(True)
+
+        can_fly = 0
+        for character in characters:
+            if len(characters[character]) == len(required_skills):
+                can_fly += 1
+
+        return self.render(
+            "fc_fits_result.html",
+            can_fly=can_fly,
+            total=total,
+            fit=fit
         )
 
 
