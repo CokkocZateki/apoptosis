@@ -1,6 +1,8 @@
 from tornado.options import define, options, parse_config_file
 
 
+define("auth_name", default="apoptosis", help="Name of the authentication system")
+
 define("redis_host", default="localhost", help="Redis server hostname")
 define("redis_port", default=6379, help="Redis server port")
 define("redis_database", default=0, help="Redis server database")
@@ -20,8 +22,11 @@ define("evesso_secretkey", help="EVE SSO secret key")
 define("evesso_callback", help="EVE SSO callback URI")
 
 options.define("slack_apitoken", help="Slack API Token")
+options.define("slack_username", help="Slack username", default="apoptosis")
 
-parse_config_file("/etc/apoptosis.conf")
+parse_config_file("/home/user/apoptosis.conf")  # XXX correct location
+
+auth_name = options.auth_name
 
 redis_host = options.redis_host
 redis_port = options.redis_port
@@ -42,3 +47,4 @@ evesso_secretkey = options.evesso_secretkey
 evesso_callback = options.evesso_callback
 
 slack_apitoken = options.slack_apitoken
+slack_username = options.slack_username
