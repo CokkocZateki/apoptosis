@@ -28,6 +28,7 @@
                     <td><img src="https://image.eveonline.com/Character/{{ character.character_id }}_50.jpg"></td>
                     <td>
                         <a href="/admin/characters/detail?character_id={{ character.id }}">{{ character.character_name }}</a>
+                        <small>{{ character.user.main_character.character_name }}</small>
                     </td>
                     <td>
                         {{ character.corporation.name }}

@@ -816,8 +816,34 @@ class AdminCharactersPage(AuthPage):
     @internal_required
     @admin_required
     async def get(self):
+        # FIXME all of this is very naive and slow for large numbers of
+        # characters, move most of the filtering to the database and paginate
+        # the result set
+
         characters = session.query(CharacterModel).order_by(
             CharacterModel.character_name).all()
+
+        filter_ship = self.get_argument("ship", None)
+        filter_system = self.get_argument("system", None)
+        filter_main = self.get_argument("main", None)
+
+        if filter_ship:
+            filter_ship = filter_ship.split("|")
+
+            characters = [character for character in characters if character.last_ship]
+            characters = [character for character in characters if character.last_ship.eve_type.eve_name in filter_ship]
+
+        if filter_system:
+            filter_system = filter_system.split("|")
+
+            characters = [character for character in characters if character.last_location]
+            characters = [character for character in characters if character.last_location.system.eve_name in filter_system]
+
+        if filter_main:
+            filter_main = filter_main.split("|")
+
+            characters = [character for character in characters if character.user.main_character.character_name]
+            characters = [character for character in characters if character.user.main_character.character_name in filter_main]
 
         return self.render("admin_characters.html", characters=characters)
 
