@@ -198,20 +198,25 @@ def refresh_character_skills(self, character_id, recurring=14400):
                 eveskill = EVESkillModel.from_id(skill_id)
 
                 session.add(eveskill)
+                session.commit()
 
                 skill_level = skill["current_skill_level"]
                 skill_points = skill["skillpoints_in_skill"]
 
-                characterskill = session.query(CharacterSkillModel).filter(
-                    CharacterSkillModel.character_id==character.id,
+                characterskills = session.query(CharacterSkillModel).filter(
+                    CharacterSkillModel.character_id==character.id
+                ).filter(
                     CharacterSkillModel.eve_skill_id==eveskill.id
-                ).one_or_none()
+                ).all()
 
-                if characterskill is None:
-                    characterskill = CharacterSkillModel(character)
-                    characterskill.eve_skill = eveskill
+                # XXX why?
+                for characterskill in characterskills:
+                    session.delete(characterskill)
 
-                # XXX notify change?
+                session.commit()
+
+                characterskill = CharacterSkillModel(character)
+                characterskill.eve_skill = eveskill
                 characterskill.level = skill_level
                 characterskill.points = skill_points
 
