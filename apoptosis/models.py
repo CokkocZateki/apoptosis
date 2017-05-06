@@ -335,6 +335,9 @@ class CharacterSkillModel(Base):
     def __init__(self, character):
         self.character = character
 
+    def __repr__(self):
+        return "<CharacterSkillModel(character_id={},eve_skill_id={},level={},points={})>".format(self.character_id, self.eve_skill_id, self.level, self.points)
+
 
 class GroupModel(Base):
     name = Column(String)
